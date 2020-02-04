@@ -60,5 +60,5 @@ public interface Response {
      * </p>
      * @return Bytes flow
      */
-    Flow.Subscriber<Byte> body();
+    Flow.Publisher<Byte> body();
 }

@@ -25,10 +25,5 @@
 /**
  * Takes implementation of Artipie HTTP layer.
  * @since 0.1
- * @todo #3:30min Implements TkResponse class.
- *  It should encapsulate `Response` interface from `com.artipie.http` package
- *  and implements `Response` from `org.takes` package. This implementation should
- *  subscribe for `body()` flow publisher and converts it to `InputStream`.
- *  Response line and headers should be joined into single `Iterable` of strings.
  */
 package com.artipie.http.tk;

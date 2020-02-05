@@ -40,7 +40,8 @@ import org.cactoos.iterable.Mapped;
  * Takes response wrapper.
  * @since 0.1
  * @todo #5:30min Write a unit test for this class.
- *  It should verify: 1) status line was added to response head
+ *  It should verify:
+ *  1) status line was added to response head
  *  2) all headers were joined and added to head
  *  3) body was converted from bytes flow to input stream
  */
@@ -117,6 +118,11 @@ public final class TkResponse implements org.takes.Response {
 
         @Override
         public void onError(final Throwable err) {
+            try {
+                this.out.close();
+            } catch (final IOException iox) {
+                throw new UncheckedIOException(iox);
+            }
             throw new IllegalStateException(err);
         }
 

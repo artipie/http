@@ -1,0 +1,25 @@
+29801bc561a5e1
+Content-Disposition: form-data; name="filetype"
+
+sdist
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="pyversion"
+
+
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="metadata_version"
+
+2.1
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="summary"
+
+A small example package
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="home_page"
+
+https://github.com/pypa/sampleproject
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="author"
+
+Example Author
+--cf57d222ad2d4807b829801bc561a5e1

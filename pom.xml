@@ -45,6 +45,11 @@ SOFTWARE.
       <artifactId>cactoos</artifactId>
     </dependency>
     <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.6</version>
+    </dependency>
+    <dependency>
       <groupId>com.github.akarnokd</groupId>
       <artifactId>rxjava2-jdk8-interop</artifactId>
     </dependency>

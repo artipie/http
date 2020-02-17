@@ -22,45 +22,25 @@
  * SOFTWARE.
  */
 
-package com.artipie.http.rq;
+package com.artipie.http.multipart;
 
 /**
- * Http Request Line.
- * <p>
- * See: 5.1 https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html
+ * RequiredMethodIsNotCalledException.
+ *
  * @since 0.1
  */
-public final class RequestLine {
-
+public class RequiredMethodIsNotCalledException extends RuntimeException {
     /**
-     * The request method.
+     * Number: serialVersionUID.
      */
-    private final String method;
-
-    /**
-     * The request uri.
-     */
-    private final String uri;
-
-    /**
-     * The Http version.
-     */
-    private final String version;
+    private static final long serialVersionUID = 1L;
 
     /**
      * Ctor.
-     * @param method The http method.
-     * @param uri The http uri.
-     * @param version The http version.
+     *
+     * @param message Message for exception.
      */
-    public RequestLine(final String method, final String uri, final String version) {
-        this.method = method;
-        this.uri = uri;
-        this.version = version;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s %s %s\r\n", this.method, this.uri, this.version);
+    public RequiredMethodIsNotCalledException(final String message) {
+        super(message);
     }
 }

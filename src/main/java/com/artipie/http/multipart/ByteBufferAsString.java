@@ -22,45 +22,44 @@
  * SOFTWARE.
  */
 
-package com.artipie.http.rq;
+package com.artipie.http.multipart;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
- * Http Request Line.
- * <p>
- * See: 5.1 https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html
+ * ByteBufferAsString.
+ *
  * @since 0.1
  */
-public final class RequestLine {
-
+public class ByteBufferAsString {
     /**
-     * The request method.
+     * ByteBuffer to build string.
      */
-    private final String method;
-
-    /**
-     * The request uri.
-     */
-    private final String uri;
-
-    /**
-     * The Http version.
-     */
-    private final String version;
+    private final ByteBuffer buffer;
 
     /**
      * Ctor.
-     * @param method The http method.
-     * @param uri The http uri.
-     * @param version The http version.
+     *
+     * @param buffer To create a string.
      */
-    public RequestLine(final String method, final String uri, final String version) {
-        this.method = method;
-        this.uri = uri;
-        this.version = version;
+    public ByteBufferAsString(final ByteBuffer buffer) {
+        this.buffer = buffer;
     }
 
-    @Override
-    public String toString() {
-        return String.format("%s %s %s\r\n", this.method, this.uri, this.version);
+    /**
+     * Gets a string value from ByteBuffer.
+     *
+     * @return String from ByteBuffer.
+     */
+    public String value() {
+        final byte[] bytes;
+        if (this.buffer.hasArray()) {
+            bytes = this.buffer.array();
+        } else {
+            bytes = new byte[this.buffer.remaining()];
+            this.buffer.get(bytes);
+        }
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 }

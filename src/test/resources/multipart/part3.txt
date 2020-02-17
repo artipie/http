@@ -1,0 +1,75 @@
+Content-Disposition: form-data; name="author_email"
+
+author@example.com
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="maintainer"
+
+
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="maintainer_email"
+
+
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="license"
+
+
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="description"
+
+
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="keywords"
+
+
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="platform"
+
+UNKNOWN
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="classifiers"
+
+Programming Language :: Python :: 3
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="classifiers"
+
+License :: OSI Approved :: MIT License
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="classifiers"
+
+Operating System :: OS Independent
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="download_url"
+
+
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="comment"
+
+
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="md5_digest"
+
+b273bf0efa2a9bff1a63bf45ea30b16c
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="sha256_digest"
+
+65caf606b53396e8d4a8f7c1034d97edbd21f4e55cd3bd1222763668ba8d584b
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="blake2_256_digest"
+
+2b385f793d294e6acbb29ed2499590d5cfe3110ac3bbfd24c699304d8479f3dd
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="requires_python"
+
+>=3.6
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="description_content_type"
+
+text/markdown
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name=":action"
+
+file_upload
+--cf57d222ad2d4807b829801bc561a5e1
+Content-Disposition: form-data; name="protocol_version"
+
+1

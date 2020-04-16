@@ -85,15 +85,15 @@ public final class SliceDownload implements Slice {
         final Publisher<ByteBuffer> body) {
         return new AsyncResponse(
             CompletableFuture.supplyAsync(() -> new RequestLineFrom(line).uri().getPath())
-                .thenApply(this.transform)
-                .thenCompose(
+                .thenApplyAsync(this.transform)
+                .thenComposeAsync(
                     key -> this.storage.exists(key).thenCompose(
                         // @checkstyle ReturnCountCheck (10 lines)
                         exist -> {
                             if (exist) {
                                 return this.storage.value(key)
-                                    .thenApply(RsWithBody::new)
-                                    .thenApply(rsp -> new RsWithStatus(rsp, RsStatus.OK));
+                                    .thenApplyAsync(RsWithBody::new)
+                                    .thenApplyAsync(rsp -> new RsWithStatus(rsp, RsStatus.OK));
                             } else {
                                 return CompletableFuture.completedFuture(
                                     new RsWithStatus(

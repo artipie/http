@@ -92,8 +92,8 @@ public final class SliceDownload implements Slice {
                         exist -> {
                             if (exist) {
                                 return this.storage.value(key)
-                                    .thenApplyAsync(RsWithBody::new)
-                                    .thenApplyAsync(rsp -> new RsWithStatus(rsp, RsStatus.OK));
+                                    .thenApply(RsWithBody::new)
+                                    .thenApply(rsp -> new RsWithStatus(rsp, RsStatus.OK));
                             } else {
                                 return CompletableFuture.completedFuture(
                                     new RsWithStatus(

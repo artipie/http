@@ -81,7 +81,7 @@ public final class SliceUpload implements Slice {
             CompletableFuture.supplyAsync(() -> new RequestLineFrom(line).uri().getPath())
                 .thenApplyAsync(this.transform)
                 .thenComposeAsync(key -> this.storage.save(key, new ContentWithSize(body, headers)))
-                .thenApplyAsync(rsp -> new RsWithStatus(RsStatus.CREATED))
+                .thenApply(rsp -> new RsWithStatus(RsStatus.CREATED))
         );
     }
 }

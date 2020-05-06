@@ -36,10 +36,6 @@ import org.reactivestreams.Publisher;
 /**
  * Response with body.
  * @since 0.3
- * @todo #29:30min Create a unit test for this class
- *  and hamcrest matcher to verify response body (similar to RsHasStatus).
- *  The test should verify response body content created from byte buffer
- *  and from string with charset encoding.
  */
 public final class RsWithBody implements Response {
 

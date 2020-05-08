@@ -109,6 +109,16 @@ public enum RsStatus {
     CONFLICT("409"),
 
     /**
+     * Length Required.
+     */
+    LENGTH_REQUIRED("411"),
+
+    /**
+     * Payload Too Large.
+     */
+    PAYLOAD_TOO_LARGE("413"),
+
+    /**
      * Requested Range Not Satisfiable.
      */
     BAD_RANGE("416"),

@@ -27,10 +27,8 @@ import com.artipie.http.hm.RsHasBody;
 import com.artipie.http.hm.RsHasStatus;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import org.cactoos.list.ListOf;
-import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.core.AllOf;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -40,15 +38,13 @@ import org.junit.jupiter.api.Test;
 final class RsWithBodyTest {
 
     @Test
-    void createsOkWithBody() {
+    void createsResponseWithStatusOkAndBody() {
         final byte[] body = "abc".getBytes();
         MatcherAssert.assertThat(
             new RsWithBody(ByteBuffer.wrap(body)),
-            new AllOf<>(
-                new ListOf<Matcher<? super RsWithBody>>(
-                    new RsHasBody(body),
-                    new RsHasStatus(RsStatus.OK)
-                )
+            Matchers.allOf(
+                new RsHasBody(body),
+                new RsHasStatus(RsStatus.OK)
             )
         );
     }
@@ -58,11 +54,9 @@ final class RsWithBodyTest {
         final String body = "def";
         MatcherAssert.assertThat(
             new RsWithBody(new RsWithStatus(RsStatus.CREATED), body, StandardCharsets.UTF_8),
-            new AllOf<>(
-                new ListOf<Matcher<? super RsWithBody>>(
-                    new RsHasBody(body.getBytes()),
-                    new RsHasStatus(RsStatus.CREATED)
-                )
+            Matchers.allOf(
+                new RsHasBody(body.getBytes()),
+                new RsHasStatus(RsStatus.CREATED)
             )
         );
     }

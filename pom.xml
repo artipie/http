@@ -154,7 +154,7 @@ SOFTWARE.
               <rules>
                 <rule>
                   <element>BUNDLE</element>
-<!--
+                  <!--
  @todo #37:30min Improve code coverage by writing unit-tests:
   each coverage counter should not be less than 75. Write unit-tests to achieve
   such coverage. After each iteration do not forget to correct coverage minimums

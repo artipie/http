@@ -118,7 +118,7 @@ public final class Header implements Map.Entry<String, String> {
      *
      * @since 0.9
      */
-    abstract static class Wrap implements Map.Entry<String, String> {
+    public abstract static class Wrap implements Map.Entry<String, String> {
 
         /**
          * Origin header.

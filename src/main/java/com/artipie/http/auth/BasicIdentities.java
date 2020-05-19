@@ -37,6 +37,11 @@ import org.cactoos.text.Base64Decoded;
 public final class BasicIdentities implements Identities {
 
     /**
+     * Basic authentication prefix.
+     */
+    private static final String PREFIX = "Basic ";
+
+    /**
      * Concrete implementation for User Identification.
      */
     private final Authentication auth;
@@ -53,20 +58,11 @@ public final class BasicIdentities implements Identities {
     @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
     public Optional<String> user(final String line,
         final Iterable<Map.Entry<String, String>> headers) {
-        final String prefix = "Basic ";
-        Optional<String> result = Optional.empty();
-        final RqHeaders hdrs = new RqHeaders(headers, "Authorization");
-        if (!hdrs.isEmpty()) {
-            final String cred = hdrs.get(0);
-            if (cred.startsWith(prefix)) {
-                final String[] credentials =
-                    new Base64Decoded(cred.substring(prefix.length())).toString().split(":");
-                final String username = credentials[0].trim();
-                final String password = credentials[1].trim();
-                this.auth.verify(username, password);
-                result = Optional.of(username);
-            }
-        }
-        return result;
+        return new RqHeaders(headers, "Authorization").stream()
+            .findFirst()
+            .filter(hdr -> hdr.startsWith(BasicIdentities.PREFIX))
+            .map(hdr -> new Base64Decoded(hdr.substring(BasicIdentities.PREFIX.length())))
+            .map(dec -> dec.toString().split(":"))
+            .flatMap(cred -> this.auth.user(cred[0].trim(), cred[1].trim()));
     }
 }

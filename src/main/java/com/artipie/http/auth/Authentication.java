@@ -23,6 +23,8 @@
  */
 package com.artipie.http.auth;
 
+import java.util.Optional;
+
 /**
  * Authentication mechanism to verify user.
  * @since 0.8
@@ -30,10 +32,10 @@ package com.artipie.http.auth;
 public interface Authentication {
 
     /**
-     * Check does user exist.
+     * Find user by credentials.
      * @param username Username
      * @param password Base64 encoded password
+     * @return User login if found
      */
-    void verify(String username, String password);
-
+    Optional<String> user(String username, String password);
 }

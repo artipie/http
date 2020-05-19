@@ -42,9 +42,7 @@ public final class BasicIdentitiesTest {
     /**
      * Stub for interface.
      */
-    private final Authentication auth = (username, password) -> {
-        return;
-    };
+    private final Authentication auth = (username, password) -> Optional.of(username);
 
     @Test
     void userWithEmptyHeaders() {

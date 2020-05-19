@@ -169,12 +169,12 @@ SOFTWARE.
                     <limit>
                       <counter>LINE</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.75</minimum>
+                      <minimum>0.74</minimum>
                     </limit>
                     <limit>
                       <counter>BRANCH</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.65</minimum>
+                      <minimum>0.64</minimum>
                     </limit>
                     <limit>
                       <counter>COMPLEXITY</counter>

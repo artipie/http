@@ -62,7 +62,7 @@ public final class SliceAuthTest {
         MatcherAssert.assertThat(
             new SliceAuth(
                 new SliceSimple(new RsWithStatus(RsStatus.OK)),
-                new Permission.ByName("none", Permissions.FREE),
+                new Permission.ByName("none", (name, action) -> false),
                 (line, headers) -> Optional.empty()
             ).response(
                 new RequestLine("POST", "/bar", "HTTP/1.2").toString(),

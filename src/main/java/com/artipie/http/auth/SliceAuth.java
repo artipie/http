@@ -90,6 +90,16 @@ public final class SliceAuth implements Slice {
                     }
                     return rsp;
                 }
-            ).orElse(new RsWithStatus(RsStatus.UNAUTHORIZED));
+            ).orElseGet(
+                () -> {
+                    final Response rsp;
+                    if (this.perm.allowed("*")) {
+                        rsp = this.origin.response(line, headers, body);
+                    } else {
+                        rsp = new RsWithStatus(RsStatus.UNAUTHORIZED);
+                    }
+                    return rsp;
+                }
+            );
     }
 }

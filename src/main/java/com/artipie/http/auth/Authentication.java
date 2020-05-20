@@ -34,7 +34,7 @@ public interface Authentication {
     /**
      * Find user by credentials.
      * @param username Username
-     * @param password Base64 encoded password
+     * @param password Password
      * @return User login if found
      */
     Optional<String> user(String username, String password);

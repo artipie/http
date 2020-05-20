@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.hm.RsHasBody;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
@@ -35,12 +36,12 @@ import io.reactivex.Flowable;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 /**
  * Test case for {@link SliceDownload}.
  * @since 1.0
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class SliceDownloadTest {
 
@@ -72,14 +73,13 @@ public final class SliceDownloadTest {
     void returnsOkOnEmptyValue() throws Exception {
         final Storage storage = new InMemoryStorage();
         final String path = "empty.txt";
-        storage.save(new Key.From(path), new Content.From(new byte[0])).get();
+        final byte[] body = new byte[0];
+        storage.save(new Key.From(path), new Content.From(body)).get();
         MatcherAssert.assertThat(
             new SliceDownload(storage).response(
                 get("/empty.txt"), Collections.emptyList(), Flowable.empty()
             ),
-            Matchers.allOf(
-                new RsHasStatus(RsStatus.OK), new RsHasBody(new byte[0])
-            )
+            new ResponseMatcher(body)
         );
     }
 

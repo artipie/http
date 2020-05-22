@@ -23,8 +23,10 @@
  */
 package com.artipie.http.auth;
 
+import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.SliceSimple;
@@ -32,12 +34,14 @@ import io.reactivex.Flowable;
 import java.util.Collections;
 import java.util.Optional;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 /**
  * Test case for {@link SliceAuth}.
  *
  * @since 0.8
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class SliceAuthTest {
 
@@ -69,7 +73,10 @@ public final class SliceAuthTest {
                 Collections.emptyList(),
                 Flowable.empty()
             ),
-            new RsHasStatus(RsStatus.UNAUTHORIZED)
+            Matchers.allOf(
+                new RsHasStatus(RsStatus.UNAUTHORIZED),
+                new RsHasHeaders(new Header("WWW-Authenticate", "Basic"))
+            )
         );
     }
 

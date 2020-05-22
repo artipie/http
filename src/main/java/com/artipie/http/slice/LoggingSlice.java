@@ -31,7 +31,9 @@ import com.artipie.http.rs.RsStatus;
 import com.jcabi.log.Logger;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.logging.Level;
 import org.reactivestreams.Publisher;
 
@@ -39,7 +41,9 @@ import org.reactivestreams.Publisher;
  * Slice that logs incoming requests and outgoing responses.
  *
  * @since 0.8
+ * @checkstyle IllegalCatchCheck (500 lines)
  */
+@SuppressWarnings("PMD.AvoidCatchingGenericException")
 public final class LoggingSlice implements Slice {
 
     /**
@@ -81,8 +85,37 @@ public final class LoggingSlice implements Slice {
         final StringBuilder msg = new StringBuilder(">> ").append(line);
         LoggingSlice.append(msg, headers);
         Logger.log(this.level, this.slice, msg.toString());
-        return connection -> this.slice.response(line, headers, body)
-            .send(new LoggingConnection(connection));
+        return connection -> {
+            try {
+                return this.slice.response(line, headers, body)
+                    .send(new LoggingConnection(connection))
+                    .handle(
+                        (value, throwable) -> {
+                            final CompletableFuture<Void> result = new CompletableFuture<>();
+                            if (throwable == null) {
+                                result.complete(value);
+                            } else {
+                                this.log(throwable);
+                                result.completeExceptionally(throwable);
+                            }
+                            return result;
+                        }
+                    )
+                    .thenCompose(Function.identity());
+            } catch (final Exception ex) {
+                this.log(ex);
+                throw ex;
+            }
+        };
+    }
+
+    /**
+     * Writes throwable to logger.
+     *
+     * @param throwable Throwable to be logged.
+     */
+    private void log(final Throwable throwable) {
+        Logger.log(this.level, this.slice, "Failure: %[exception]s", throwable);
     }
 
     /**

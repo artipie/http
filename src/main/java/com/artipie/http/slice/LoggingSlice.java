@@ -28,14 +28,12 @@ import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.rs.RsStatus;
-import com.google.common.base.Throwables;
 import com.jcabi.log.Logger;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.logging.Level;
 import org.reactivestreams.Publisher;
 
@@ -91,13 +89,19 @@ public final class LoggingSlice implements Slice {
             try {
                 return this.slice.response(line, headers, body)
                     .send(new LoggingConnection(connection))
-                    .exceptionally(
-                        throwable -> {
-                            this.log(throwable);
-                            Throwables.throwIfUnchecked(throwable);
-                            throw new CompletionException(throwable);
+                    .handle(
+                        (value, throwable) -> {
+                            final CompletableFuture<Void> result = new CompletableFuture<>();
+                            if (throwable == null) {
+                                result.complete(value);
+                            } else {
+                                this.log(throwable);
+                                result.completeExceptionally(throwable);
+                            }
+                            return result;
                         }
-                    );
+                    )
+                    .thenCompose(Function.identity());
             } catch (final Exception ex) {
                 this.log(ex);
                 throw ex;
@@ -111,9 +115,7 @@ public final class LoggingSlice implements Slice {
      * @param throwable Throwable to be logged.
      */
     private void log(final Throwable throwable) {
-        final StringWriter writer = new StringWriter();
-        throwable.printStackTrace(new PrintWriter(writer));
-        Logger.log(this.level, this.slice, "Failure: %s", writer.toString());
+        Logger.log(this.level, this.slice, "Failure: %[exception]s", throwable);
     }
 
     /**

@@ -49,7 +49,7 @@ final class RsWithBodyTest {
         final String body = "def";
         MatcherAssert.assertThat(
             new RsWithBody(new RsWithStatus(RsStatus.CREATED), body, StandardCharsets.UTF_8),
-            new ResponseMatcher(RsStatus.CREATED, body)
+            new ResponseMatcher(RsStatus.CREATED, body, StandardCharsets.UTF_8)
         );
     }
 

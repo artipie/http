@@ -83,7 +83,7 @@ class ResponseMatcherTest {
     void matchesStringBody() {
         final String body = "000";
         MatcherAssert.assertThat(
-            new ResponseMatcher(body)
+            new ResponseMatcher(body, StandardCharsets.UTF_8)
                 .matches(
                     new RsWithBody(
                         StandardRs.EMPTY, body, StandardCharsets.UTF_8
@@ -97,7 +97,7 @@ class ResponseMatcherTest {
     void matchesStatusAndStringBody() {
         final String body = "def";
         MatcherAssert.assertThat(
-            new ResponseMatcher(RsStatus.NOT_FOUND, body)
+            new ResponseMatcher(RsStatus.NOT_FOUND, body, StandardCharsets.UTF_8)
                 .matches(
                     new RsWithBody(
                         StandardRs.NOT_FOUND, body, StandardCharsets.UTF_8

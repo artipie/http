@@ -26,6 +26,7 @@ package com.artipie.http.hm;
 import com.artipie.http.Response;
 import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
+import java.nio.charset.Charset;
 import org.cactoos.list.ListOf;
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -70,12 +71,13 @@ public final class ResponseMatcher extends AllOf<Response> {
      * Ctor.
      * @param status Expected status
      * @param body Expected body
+     * @param charset Character set
      */
-    public ResponseMatcher(final RsStatus status, final String body) {
+    public ResponseMatcher(final RsStatus status, final String body, final Charset charset) {
         super(
             new ListOf<Matcher<? super Response>>(
                 new RsHasStatus(status),
-                new RsHasBody(body.getBytes())
+                new RsHasBody(body.getBytes(charset))
             )
         );
     }
@@ -83,12 +85,13 @@ public final class ResponseMatcher extends AllOf<Response> {
     /**
      * Ctor.
      * @param body Expected body
+     * @param charset Character set
      */
-    public ResponseMatcher(final String body) {
+    public ResponseMatcher(final String body, final Charset charset) {
         super(
             new ListOf<Matcher<? super Response>>(
                 new RsHasStatus(RsStatus.OK),
-                new RsHasBody(body.getBytes())
+                new RsHasBody(body.getBytes(charset))
             )
         );
     }

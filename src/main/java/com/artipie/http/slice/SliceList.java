@@ -24,7 +24,6 @@
 
 package com.artipie.http.slice;
 
-import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
@@ -46,18 +45,11 @@ public final class SliceList implements Slice {
     private final Storage storage;
 
     /**
-     * Key.
-     */
-    private final Key key;
-
-    /**
      * Constructor.
      * @param storage Storage.
-     * @param key Key.
      */
-    public SliceList(final Storage storage, final Key key) {
+    public SliceList(final Storage storage) {
         this.storage = storage;
-        this.key = key;
     }
 
     @Override

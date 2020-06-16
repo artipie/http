@@ -29,7 +29,9 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.http.hm.ResponseMatcher;
+import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
@@ -45,7 +47,7 @@ import org.junit.jupiter.api.Test;
  *  found in repository bound to that key, printing result to an HTML. Then
  *  enable the test below and return coverage missed classes values to 15.
  */
-public class SliceListTest {
+public final class SliceListTest {
 
     /**
     * String value for root.
@@ -56,6 +58,16 @@ public class SliceListTest {
      * String value for first level.
      */
     private static final String ARTIPIE = "artipie";
+
+    /**
+     * Get method.
+     */
+    private static final String METHOD = "GET";
+
+    /**
+     * Http.
+     */
+    private static final String HTTP = "HTTP/1.1";
 
     @Test
     @Disabled
@@ -79,16 +91,45 @@ public class SliceListTest {
         ).join();
         MatcherAssert.assertThat(
             new SliceList(
-                storage,
-                new Key.From(SliceListTest.COM, SliceListTest.ARTIPIE)
+                storage
             ).response(
-                new RequestLine("GET", "list", "HTTP/1.1").toString(),
+                new RequestLine(
+                    SliceListTest.METHOD,
+                    new Key.From(SliceListTest.COM, SliceListTest.ARTIPIE).string(),
+                    SliceListTest.HTTP
+                ).toString(),
                 Collections.emptyList(),
                 Flowable.empty()
             ),
             new ResponseMatcher(
                 //@checkstyle LineLengthCheck (1 line)
                 "<html><body><ul><li>FileOne.txt</li><li>FileTwo.txt</li><li>FileThree.txt</li></ul></body></html>".getBytes()
+            )
+        );
+    }
+
+    @Test
+    @Disabled
+    void returnsNotFound() {
+        final Storage storage = new InMemoryStorage();
+        storage.save(
+            new Key.From(SliceListTest.COM, SliceListTest.ARTIPIE, "File404.txt"),
+            new Content.From("File 404 Content".getBytes())
+        ).join();
+        MatcherAssert.assertThat(
+            new SliceList(
+                storage
+            ).response(
+                new RequestLine(
+                    SliceListTest.METHOD,
+                    new Key.From("any").string(),
+                    SliceListTest.HTTP
+                ).toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasStatus(
+                RsStatus.NOT_FOUND
             )
         );
     }

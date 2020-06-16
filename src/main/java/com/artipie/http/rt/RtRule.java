@@ -55,10 +55,37 @@ public interface RtRule {
     boolean apply(String line, Iterable<Map.Entry<String, String>> headers);
 
     /**
-     * Route by multiple rules.
+     * This rule is matched only when all of the rules are matched.
+     * This class is kept for backward compatibility reasons.
      * @since 0.5
+     * @deprecated use {@link All} instead
      */
-    final class Multiple implements RtRule {
+    @Deprecated
+    final class Multiple extends All {
+
+        /**
+         * Ctor.
+         * @param rules Rules array
+         */
+        public Multiple(final RtRule... rules) {
+            super(new ListOf<>(rules));
+        }
+
+        /**
+         * Ctor.
+         * @param rules Rules
+         */
+        public Multiple(final Iterable<RtRule> rules) {
+            super(rules);
+        }
+
+    }
+
+    /**
+     * This rule is matched only when all of the rules are matched.
+     * @since 0.10
+     */
+    class All implements RtRule {
 
         /**
          * Rules.
@@ -69,7 +96,7 @@ public interface RtRule {
          * Route by multiple rules.
          * @param rules Rules array
          */
-        public Multiple(final RtRule... rules) {
+        public All(final RtRule... rules) {
             this(new ListOf<>(rules));
         }
 
@@ -77,7 +104,7 @@ public interface RtRule {
          * Route by multiple rules.
          * @param rules Rules
          */
-        public Multiple(final Iterable<RtRule> rules) {
+        public All(final Iterable<RtRule> rules) {
             this.rules = rules;
         }
 
@@ -88,6 +115,47 @@ public interface RtRule {
             for (final RtRule rule : this.rules) {
                 if (!rule.apply(line, headers)) {
                     match = false;
+                    break;
+                }
+            }
+            return match;
+        }
+    }
+
+    /**
+     * This rule is matched only when any of the rules is matched.
+     * @since 0.10
+     */
+    final class Any implements RtRule {
+
+        /**
+         * Rules.
+         */
+        private final Iterable<RtRule> rules;
+
+        /**
+         * Route by any of the rules.
+         * @param rules Rules array
+         */
+        public Any(final RtRule... rules) {
+            this(new ListOf<>(rules));
+        }
+
+        /**
+         * Route by any of the rules.
+         * @param rules Rules
+         */
+        public Any(final Iterable<RtRule> rules) {
+            this.rules = rules;
+        }
+
+        @Override
+        public boolean apply(final String line,
+            final Iterable<Map.Entry<String, String>> headers) {
+            boolean match = false;
+            for (final RtRule rule : this.rules) {
+                if (rule.apply(line, headers)) {
+                    match = true;
                     break;
                 }
             }

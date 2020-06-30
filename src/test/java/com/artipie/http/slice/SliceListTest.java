@@ -33,6 +33,7 @@ import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Disabled;
@@ -50,16 +51,6 @@ import org.junit.jupiter.api.Test;
 public final class SliceListTest {
 
     /**
-    * String value for root.
-     */
-    private static final String COM = "com";
-
-    /**
-     * String value for first level.
-     */
-    private static final String ARTIPIE = "artipie";
-
-    /**
      * Get method.
      */
     private static final String METHOD = "GET";
@@ -74,20 +65,20 @@ public final class SliceListTest {
     void returnsList() {
         final Storage storage = new InMemoryStorage();
         storage.save(
-            new Key.From(SliceListTest.COM, SliceListTest.ARTIPIE, "FileOne.txt"),
-            new Content.From("File One Content".getBytes())
+            new Key.From("com/artipie/FileOne.txt"),
+            new Content.From("File One Content".getBytes(StandardCharsets.UTF_8))
         ).join();
         storage.save(
-            new Key.From(SliceListTest.COM, SliceListTest.ARTIPIE, "FileTwo.txt"),
-            new Content.From("File Two Content".getBytes())
+            new Key.From("com/artipie/FileTwo.txt"),
+            new Content.From("File Two Content".getBytes(StandardCharsets.UTF_8))
         ).join();
         storage.save(
-            new Key.From(SliceListTest.COM, SliceListTest.ARTIPIE, "FileThree.txt"),
-            new Content.From("File Three Content".getBytes())
+            new Key.From("com/artipie/FileThree.txt"),
+            new Content.From("File Three Content".getBytes(StandardCharsets.UTF_8))
         ).join();
         storage.save(
             new Key.From("other", "path", "FileFour.txt"),
-            new Content.From("File Four Content".getBytes())
+            new Content.From("File Four Content".getBytes(StandardCharsets.UTF_8))
         ).join();
         MatcherAssert.assertThat(
             new SliceList(
@@ -95,7 +86,7 @@ public final class SliceListTest {
             ).response(
                 new RequestLine(
                     SliceListTest.METHOD,
-                    new Key.From(SliceListTest.COM, SliceListTest.ARTIPIE).string(),
+                    new Key.From("com", "artipie").string(),
                     SliceListTest.HTTP
                 ).toString(),
                 Collections.emptyList(),
@@ -103,7 +94,7 @@ public final class SliceListTest {
             ),
             new ResponseMatcher(
                 //@checkstyle LineLengthCheck (1 line)
-                "<html><body><ul><li>FileOne.txt</li><li>FileTwo.txt</li><li>FileThree.txt</li></ul></body></html>".getBytes()
+                "<html><body><ul><li>FileOne.txt</li><li>FileTwo.txt</li><li>FileThree.txt</li></ul></body></html>".getBytes(StandardCharsets.UTF_8)
             )
         );
     }
@@ -113,8 +104,8 @@ public final class SliceListTest {
     void returnsNotFound() {
         final Storage storage = new InMemoryStorage();
         storage.save(
-            new Key.From(SliceListTest.COM, SliceListTest.ARTIPIE, "File404.txt"),
-            new Content.From("File 404 Content".getBytes())
+            new Key.From("com/artipie/File404.txt"),
+            new Content.From("File 404 Content".getBytes(StandardCharsets.UTF_8))
         ).join();
         MatcherAssert.assertThat(
             new SliceList(

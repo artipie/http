@@ -42,4 +42,65 @@ public interface Permissions {
      * @return True if allowed
      */
     boolean allowed(String name, String action);
+
+    /**
+     * Abstract decorator for Permissions.
+     *
+     * @since 0.15
+     */
+    abstract class Wrap implements Permissions {
+
+        /**
+         * Origin permissions.
+         */
+        private final Permissions origin;
+
+        /**
+         * Ctor.
+         *
+         * @param origin Origin permissions.
+         */
+        protected Wrap(final Permissions origin) {
+            this.origin = origin;
+        }
+
+        @Override
+        public final boolean allowed(final String name, final String action) {
+            return this.origin.allowed(name, action);
+        }
+    }
+
+    /**
+     * Permissions implementation allowing single action for single user.
+     *
+     * @since 0.15
+     */
+    final class Single implements Permissions {
+
+        /**
+         * User name.
+         */
+        private final String username;
+
+        /**
+         * Allowed action.
+         */
+        private final String action;
+
+        /**
+         * Ctor.
+         *
+         * @param username User name.
+         * @param allowed Allowed action.
+         */
+        public Single(final String username, final String allowed) {
+            this.username = username;
+            this.action = allowed;
+        }
+
+        @Override
+        public boolean allowed(final String name, final String act) {
+            return this.username.equals(name) && this.action.equals(act);
+        }
+    }
 }

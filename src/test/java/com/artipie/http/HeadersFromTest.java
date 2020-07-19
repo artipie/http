@@ -21,38 +21,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.http.rs;
+package com.artipie.http;
 
-import com.artipie.http.Headers;
-import com.artipie.http.rq.RqHeaders;
+import com.artipie.http.headers.Header;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Test;
 
 /**
- * Location header.
+ * Tests for {@link Headers.From}.
  *
  * @since 0.11
  */
-public final class Location extends Header.Wrap {
+class HeadersFromTest {
 
-    /**
-     * Header name.
-     */
-    public static final String NAME = "Location";
-
-    /**
-     * Ctor.
-     *
-     * @param value Header value.
-     */
-    public Location(final String value) {
-        super(new Header(Location.NAME, value));
+    @Test
+    public void shouldConcatWithHeader() {
+        final Header header = new Header("h1", "v1");
+        final String name = "h2";
+        final String value = "v2";
+        MatcherAssert.assertThat(
+            new Headers.From(new Headers.From(header), name, value),
+            Matchers.contains(header, new Header(name, value))
+        );
     }
 
-    /**
-     * Ctor.
-     *
-     * @param headers Headers to extract header from.
-     */
-    public Location(final Headers headers) {
-        this(new RqHeaders.Single(headers, Location.NAME).asString());
+    @Test
+    public void shouldConcatWithHeaders() {
+        final Header origin = new Header("hh1", "vv1");
+        final Header one = new Header("hh2", "vv2");
+        final Header two = new Header("hh3", "vv3");
+        MatcherAssert.assertThat(
+            new Headers.From(new Headers.From(origin), one, two),
+            Matchers.contains(origin, one, two)
+        );
     }
 }

@@ -29,6 +29,7 @@ import com.artipie.http.rs.RsWithStatus;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -100,7 +101,7 @@ final class GroupResults {
             if (target.success()) {
                 this.done.set(true);
                 this.list.remove(target);
-                this.list.forEach(GroupResult::cancel);
+                this.list.stream().filter(Objects::nonNull).forEach(GroupResult::cancel);
                 return target.replay(con);
             }
         }

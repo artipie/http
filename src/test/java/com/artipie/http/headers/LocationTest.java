@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.http.rs;
+package com.artipie.http.headers;
 
 import com.artipie.http.Headers;
 import org.hamcrest.MatcherAssert;
@@ -30,35 +30,36 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test case for {@link ContentType}.
+ * Test case for {@link Location}.
  *
  * @since 0.11
  */
-public final class ContentTypeTest {
+public final class LocationTest {
 
     @Test
     void shouldHaveExpectedName() {
         MatcherAssert.assertThat(
-            new ContentType("10").getKey(),
-            new IsEqual<>("Content-Type")
+            new Location("http://artipie.com/").getKey(),
+            new IsEqual<>("Location")
         );
     }
 
     @Test
     void shouldHaveExpectedValue() {
+        final String value = "http://artipie.com/something";
         MatcherAssert.assertThat(
-            new ContentType("10").getValue(),
-            new IsEqual<>("10")
+            new Location(value).getValue(),
+            new IsEqual<>(value)
         );
     }
 
     @Test
     void shouldExtractValueFromHeaders() {
-        final String value = "application/octet-stream";
-        final ContentType header = new ContentType(
+        final String value = "http://artipie.com/resource";
+        final Location header = new Location(
             new Headers.From(
                 new Header("Content-Length", "11"),
-                new Header("content-type", value),
+                new Header("location", value),
                 new Header("X-Something", "Some Value")
             )
         );
@@ -69,16 +70,16 @@ public final class ContentTypeTest {
     void shouldFailToExtractValueFromEmptyHeaders() {
         Assertions.assertThrows(
             IllegalStateException.class,
-            () -> new ContentType(Headers.EMPTY).getValue()
+            () -> new Location(Headers.EMPTY).getValue()
         );
     }
 
     @Test
-    void shouldFailToExtractValueWhenNoContentTypeHeaders() {
+    void shouldFailToExtractValueWhenNoLocationHeaders() {
         Assertions.assertThrows(
             IllegalStateException.class,
-            () -> new ContentType(
-                new Headers.From("Location", "http://artipie.com")
+            () -> new Location(
+                new Headers.From("Content-Type", "text/plain")
             ).getValue()
         );
     }
@@ -87,10 +88,10 @@ public final class ContentTypeTest {
     void shouldFailToExtractValueFromMultipleHeaders() {
         Assertions.assertThrows(
             IllegalStateException.class,
-            () -> new ContentType(
+            () -> new Location(
                 new Headers.From(
-                    new ContentType("application/json"),
-                    new ContentType("text/plain")
+                    new Location("http://artipie.com/1"),
+                    new Location("http://artipie.com/2")
                 )
             ).getValue()
         );

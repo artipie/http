@@ -21,27 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.http.rs;
+package com.artipie.http.headers;
 
-import com.artipie.http.headers.Header;
-import com.artipie.http.hm.RsHasHeaders;
-import org.cactoos.map.MapEntry;
-import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Test;
+import com.artipie.http.Headers;
+import com.artipie.http.rq.RqHeaders;
 
 /**
- * Test case for {@link RsWithHeaders}.
- * @since 0.9
+ * Location header.
+ *
+ * @since 0.11
  */
-public class RsWithHeadersTest {
+public final class Location extends Header.Wrap {
 
-    @Test
-    void testRsWithHeadersMapEntry() {
-        final String name = "Content-Type";
-        final String value = "text/plain; charset=us-ascii";
-        MatcherAssert.assertThat(
-            new RsWithHeaders(new RsWithStatus(RsStatus.OK), new MapEntry<>(name, value)),
-            new RsHasHeaders(new Header(name, value))
-        );
+    /**
+     * Header name.
+     */
+    public static final String NAME = "Location";
+
+    /**
+     * Ctor.
+     *
+     * @param value Header value.
+     */
+    public Location(final String value) {
+        super(new Header(Location.NAME, value));
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param headers Headers to extract header from.
+     */
+    public Location(final Headers headers) {
+        this(new RqHeaders.Single(headers, Location.NAME).asString());
     }
 }

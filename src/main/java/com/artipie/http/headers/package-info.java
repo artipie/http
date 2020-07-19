@@ -21,47 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.http.rs;
-
-import com.artipie.http.Headers;
-import com.artipie.http.rq.RqHeaders;
 
 /**
- * Content-Length header.
+ * HTTP header classes.
  *
- * @since 0.10
+ * @since 0.13
  */
-public final class ContentLength extends Header.Wrap {
+package com.artipie.http.headers;
 
-    /**
-     * Header name.
-     */
-    public static final String NAME = "Content-Length";
-
-    /**
-     * Ctor.
-     *
-     * @param value Header value.
-     */
-    public ContentLength(final String value) {
-        super(new Header(ContentLength.NAME, value));
-    }
-
-    /**
-     * Ctor.
-     *
-     * @param headers Headers to extract header from.
-     */
-    public ContentLength(final Headers headers) {
-        this(new RqHeaders.Single(headers, ContentLength.NAME).asString());
-    }
-
-    /**
-     * Read header as long value.
-     *
-     * @return Header value.
-     */
-    public long longValue() {
-        return Long.parseLong(this.getValue());
-    }
-}

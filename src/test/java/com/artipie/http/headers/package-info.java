@@ -21,24 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.http.auth;
-
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Test;
 
 /**
- * Tests for {@link BasicAuthorizationHeader}.
+ * Tests for HTTP header classes.
  *
- * @since 0.9.5
+ * @since 0.13
  */
-public final class BasicAuthorizationHeaderTest {
+package com.artipie.http.headers;
 
-    @Test
-    void shouldHaveExpectedValue() {
-        MatcherAssert.assertThat(
-            new BasicAuthorizationHeader("Aladdin", "open sesame").getValue(),
-            new IsEqual<>("Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
-        );
-    }
-}

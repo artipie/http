@@ -38,4 +38,67 @@ public interface Authentication {
      * @return User login if found
      */
     Optional<String> user(String username, String password);
+
+    /**
+     * Abstract decorator for Authentication.
+     *
+     * @since 0.15
+     */
+    abstract class Wrap implements Authentication {
+
+        /**
+         * Origin authentication.
+         */
+        private final Authentication auth;
+
+        /**
+         * Ctor.
+         *
+         * @param auth Origin authentication.
+         */
+        protected Wrap(final Authentication auth) {
+            this.auth = auth;
+        }
+
+        @Override
+        public final Optional<String> user(final String username, final String password) {
+            return this.auth.user(username, password);
+        }
+    }
+
+    /**
+     * Authentication implementation aware of single user with specified password.
+     *
+     * @since 0.15
+     */
+    final class Single implements Authentication {
+
+        /**
+         * Username.
+         */
+        private final String username;
+
+        /**
+         * Password.
+         */
+        private final String password;
+
+        /**
+         * Ctor.
+         *
+         * @param username Username.
+         * @param password Password.
+         */
+        public Single(final String username, final String password) {
+            this.username = username;
+            this.password = password;
+        }
+
+        @Override
+        public Optional<String> user(final String user, final String pass) {
+            return Optional.of(user)
+                .filter(this.username::equals)
+                .filter(ignored -> this.password.equals(pass));
+        }
+    }
 }

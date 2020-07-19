@@ -21,47 +21,47 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.http.rs;
+package com.artipie.http.headers;
 
-import com.artipie.asto.Content;
-import com.artipie.http.headers.Header;
-import com.artipie.http.hm.ResponseMatcher;
-import com.artipie.http.hm.RsHasHeaders;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
+import com.artipie.http.Headers;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test for {@link RsWithBody}.
- * @since 0.9
+ * Test case for {@link ContentLength}.
+ *
+ * @since 0.10
  */
-final class RsWithBodyTest {
+public final class ContentLengthTest {
 
     @Test
-    void createsResponseWithStatusOkAndBody() {
-        final byte[] body = "abc".getBytes();
+    void shouldHaveExpectedValue() {
         MatcherAssert.assertThat(
-            new RsWithBody(ByteBuffer.wrap(body)),
-            new ResponseMatcher(body)
+            new ContentLength("10").getKey(),
+            new IsEqual<>("Content-Length")
         );
     }
 
     @Test
-    void appendsBody() {
-        final String body = "def";
-        MatcherAssert.assertThat(
-            new RsWithBody(new RsWithStatus(RsStatus.CREATED), body, StandardCharsets.UTF_8),
-            new ResponseMatcher(RsStatus.CREATED, body, StandardCharsets.UTF_8)
+    void shouldExtractLongValueFromHeaders() {
+        final long length = 123;
+        final ContentLength header = new ContentLength(
+            new Headers.From(
+                new Header("Content-Type", "application/octet-stream"),
+                new Header("content-length", String.valueOf(length)),
+                new Header("X-Something", "Some Value")
+            )
         );
+        MatcherAssert.assertThat(header.longValue(), new IsEqual<>(length));
     }
 
     @Test
-    void appendsContentSizeHeader() {
-        final int size = 100;
-        MatcherAssert.assertThat(
-            new RsWithBody(StandardRs.EMPTY, new Content.From(new byte[size])),
-            new RsHasHeaders(new Header("Content-Length", String.valueOf(size)))
+    void shouldFailToExtractLongValueFromEmptyHeaders() {
+        Assertions.assertThrows(
+            IllegalStateException.class,
+            () -> new ContentLength(Headers.EMPTY).longValue()
         );
     }
 }

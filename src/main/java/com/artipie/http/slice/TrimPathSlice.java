@@ -25,9 +25,10 @@ package com.artipie.http.slice;
 
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
+import com.artipie.http.headers.Header;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RequestLineFrom;
-import com.artipie.http.rs.Header;
+import com.artipie.http.rq.RqHeaders;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithStatus;
@@ -54,6 +55,11 @@ import org.reactivestreams.Publisher;
  * @since 0.8
  */
 public final class TrimPathSlice implements Slice {
+
+    /**
+     * Full path header name.
+     */
+    private static final String HDR_FULL_PATH = "X-FullPath";
 
     /**
      * Delegate slice.
@@ -99,7 +105,10 @@ public final class TrimPathSlice implements Slice {
         final String full = uri.getPath();
         final Matcher matcher = this.ptn.matcher(full);
         final Response response;
-        if (matcher.matches()) {
+        final boolean recursion = !new RqHeaders(headers, TrimPathSlice.HDR_FULL_PATH).isEmpty();
+        if (matcher.matches() && recursion) {
+            response = this.slice.response(line, headers, body);
+        } else if (matcher.matches() && !recursion) {
             response = this.slice.response(
                 new RequestLine(
                     rline.method().toString(),
@@ -109,7 +118,8 @@ public final class TrimPathSlice implements Slice {
                     rline.version()
                 ).toString(),
                 Iterables.concat(
-                    headers, Collections.singletonList(new Header("X-FullPath", full))
+                    headers,
+                    Collections.singletonList(new Header(TrimPathSlice.HDR_FULL_PATH, full))
                 ),
                 body
             );

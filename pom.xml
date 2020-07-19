@@ -119,7 +119,7 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>asto</artifactId>
-      <version>0.15</version>
+      <version>0.20.2</version>
       <optional>true</optional>
     </dependency>
     <dependency>
@@ -169,12 +169,12 @@ SOFTWARE.
                     <limit>
                       <counter>LINE</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.69</minimum>
+                      <minimum>0.68</minimum>
                     </limit>
                     <limit>
                       <counter>BRANCH</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.55</minimum>
+                      <minimum>0.52</minimum>
                     </limit>
                     <limit>
                       <counter>COMPLEXITY</counter>

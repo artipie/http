@@ -41,4 +41,12 @@ public class RequestLineTest {
             Matchers.equalTo("GET /pub/WWW/TheProject.html HTTP/1.1\r\n")
         );
     }
+
+    @Test
+    public void shouldHaveDefaultVersionWhenNoneSpecified() {
+        MatcherAssert.assertThat(
+            new RequestLine(RqMethod.PUT, "/file.txt").toString(),
+            Matchers.equalTo("PUT /file.txt HTTP/1.1\r\n")
+        );
+    }
 }

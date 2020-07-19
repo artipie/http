@@ -1,5 +1,5 @@
 ---
-name: Maven Build
+name: CI checks
 "on":
   push:
     branches:
@@ -8,7 +8,7 @@ name: Maven Build
     branches:
       - master
 jobs:
-  build:
+  maven-build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -26,5 +26,15 @@ jobs:
           key: ${{ runner.os }}-jdk-${{ matrix.java }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-jdk-${{ matrix.java }}-maven-
-      - name: Build it with Maven
+      - name: Run tests
         run: mvn -B verify -Pqulice
+  pdd-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: g4s8/pdd-action@master
+  xcop-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: g4s8/xcop-action@master

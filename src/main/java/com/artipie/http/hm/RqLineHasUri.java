@@ -59,6 +59,11 @@ public final class RqLineHasUri extends TypeSafeMatcher<RequestLineFrom> {
         description.appendText("URI ").appendDescriptionOf(this.target);
     }
 
+    @Override
+    public void describeMismatchSafely(final RequestLineFrom item, final Description description) {
+        this.target.describeMismatch(item.uri(), description.appendText("URI was: "));
+    }
+
     /**
      * URI path matcher.
      * @since 0.10
@@ -94,6 +99,11 @@ public final class RqLineHasUri extends TypeSafeMatcher<RequestLineFrom> {
         @Override
         public void describeTo(final Description description) {
             description.appendText("path ").appendDescriptionOf(this.target);
+        }
+
+        @Override
+        public void describeMismatchSafely(final URI item, final Description description) {
+            description.appendText("path was: ").appendValue(item.getPath());
         }
     }
 }

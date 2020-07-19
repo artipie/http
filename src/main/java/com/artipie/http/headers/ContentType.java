@@ -21,33 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.http.auth;
+package com.artipie.http.headers;
 
-import com.artipie.http.rs.Header;
-import org.cactoos.text.Base64Encoded;
+import com.artipie.http.Headers;
+import com.artipie.http.rq.RqHeaders;
 
 /**
- * Basic authentication `Authorization` header.
+ * Content-Type header.
  *
- * @since 0.9.5
+ * @since 0.11
  */
-public final class BasicAuthorizationHeader extends Header.Wrap {
+public final class ContentType extends Header.Wrap {
+
+    /**
+     * Header name.
+     */
+    public static final String NAME = "Content-Type";
 
     /**
      * Ctor.
      *
-     * @param username User name.
-     * @param password Password.
+     * @param value Header value.
      */
-    public BasicAuthorizationHeader(final String username, final String password) {
-        super(
-            new Header(
-                "Authorization",
-                String.format(
-                    "Basic %s",
-                    new Base64Encoded(String.format("%s:%s", username, password))
-                )
-            )
-        );
+    public ContentType(final String value) {
+        super(new Header(ContentType.NAME, value));
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param headers Headers to extract header from.
+     */
+    public ContentType(final Headers headers) {
+        this(new RqHeaders.Single(headers, ContentType.NAME).asString());
     }
 }

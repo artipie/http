@@ -24,8 +24,8 @@
 package com.artipie.http.slice;
 
 import com.artipie.http.Headers;
+import com.artipie.http.headers.Header;
 import com.artipie.http.hm.RsHasHeaders;
-import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.StandardRs;
 import io.reactivex.Flowable;

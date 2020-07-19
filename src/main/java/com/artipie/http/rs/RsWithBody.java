@@ -24,12 +24,15 @@
 
 package com.artipie.http.rs;
 
+import com.artipie.asto.Content;
 import com.artipie.http.Connection;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
+import com.artipie.http.headers.ContentLength;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import org.reactivestreams.Publisher;
 
@@ -45,9 +48,9 @@ public final class RsWithBody implements Response {
     private final Response origin;
 
     /**
-     * Body publisher.
+     * Body content.
      */
-    private final Publisher<ByteBuffer> body;
+    private final Content body;
 
     /**
      * Decorates response with new text body.
@@ -82,7 +85,7 @@ public final class RsWithBody implements Response {
      * @param buf Body buffer
      */
     public RsWithBody(final Response origin, final ByteBuffer buf) {
-        this(origin, Flowable.just(buf));
+        this(origin, new Content.From(Optional.of((long) buf.remaining()), Flowable.just(buf)));
     }
 
     /**
@@ -94,18 +97,39 @@ public final class RsWithBody implements Response {
     }
 
     /**
-     * Decorates origin response body with publisher.
-     * @param origin Response
+     * Response with body from publisher.
+     * @param origin Origin response
      * @param body Publisher
      */
     public RsWithBody(final Response origin, final Publisher<ByteBuffer> body) {
+        this(origin, new Content.From(body));
+    }
+
+    /**
+     * Decorates origin response body with content.
+     * @param origin Response
+     * @param body Content
+     */
+    public RsWithBody(final Response origin, final Content body) {
         this.origin = origin;
         this.body = body;
     }
 
     @Override
     public CompletionStage<Void> send(final Connection con) {
-        return this.origin.send(new RsWithBody.ConWithBody(con, this.body));
+        return withHeaders(this.origin, this.body.size()).send(new ConWithBody(con, this.body));
+    }
+
+    /**
+     * Wrap response with headers if size provided.
+     * @param origin Origin response
+     * @param size Maybe size
+     * @return Wrapped response
+     */
+    private static Response withHeaders(final Response origin, final Optional<Long> size) {
+        return size.<Response>map(
+            val -> new RsWithHeaders(origin, new ContentLength(String.valueOf(val)))
+        ).orElse(origin);
     }
 
     /**

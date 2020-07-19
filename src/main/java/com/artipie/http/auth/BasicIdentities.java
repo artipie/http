@@ -23,6 +23,7 @@
  */
 package com.artipie.http.auth;
 
+import com.artipie.http.headers.Authorization;
 import com.artipie.http.rq.RqHeaders;
 import java.util.Map;
 import java.util.Optional;
@@ -58,7 +59,7 @@ public final class BasicIdentities implements Identities {
     @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
     public Optional<String> user(final String line,
         final Iterable<Map.Entry<String, String>> headers) {
-        return new RqHeaders(headers, "Authorization").stream()
+        return new RqHeaders(headers, Authorization.NAME).stream()
             .findFirst()
             .filter(hdr -> hdr.startsWith(BasicIdentities.PREFIX))
             .map(hdr -> new Base64Decoded(hdr.substring(BasicIdentities.PREFIX.length())))

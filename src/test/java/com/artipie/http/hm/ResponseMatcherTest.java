@@ -23,7 +23,8 @@
  */
 package com.artipie.http.hm;
 
-import com.artipie.http.rs.Header;
+import com.artipie.http.Headers;
+import com.artipie.http.headers.Header;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Test for {@link ResponseMatcher}.
  * @since 0.10
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 class ResponseMatcherTest {
 
@@ -123,13 +125,33 @@ class ResponseMatcherTest {
 
     @Test
     void matchesStatusBodyAndHeaders() {
-        final Header header = new Header("Accept", "all");
         final String body = "123";
         MatcherAssert.assertThat(
-            new ResponseMatcher(RsStatus.OK, body.getBytes(), header)
+            new ResponseMatcher(RsStatus.OK, body.getBytes())
                 .matches(
                     new RsWithBody(
-                        new RsWithHeaders(StandardRs.EMPTY, header), body, StandardCharsets.UTF_8
+                        new RsWithHeaders(
+                            StandardRs.EMPTY,
+                            new Header("Content-Length", "3")
+                        ),
+                        body, StandardCharsets.UTF_8
+                    )
+                ),
+            new IsEqual<>(true)
+        );
+    }
+
+    @Test
+    void matchesStatusAndHeaderMatcher() {
+        final RsStatus status = RsStatus.ACCEPTED;
+        final String header = "Some-header";
+        final String value = "Some value";
+        MatcherAssert.assertThat(
+            new ResponseMatcher(status, new IsHeader(header, value))
+                .matches(
+                    new RsWithHeaders(
+                        new RsWithStatus(status),
+                        new Headers.From(header, value)
                     )
                 ),
             new IsEqual<>(true)

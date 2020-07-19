@@ -24,7 +24,7 @@
 package com.artipie.http.hm;
 
 import com.artipie.http.Response;
-import com.artipie.http.rs.Header;
+import com.artipie.http.headers.Header;
 import com.artipie.http.rs.RsStatus;
 import java.nio.charset.Charset;
 import org.cactoos.list.ListOf;
@@ -128,6 +128,20 @@ public final class ResponseMatcher extends AllOf<Response> {
      * @param headers Expected headers
      */
     public ResponseMatcher(final RsStatus status, final Header... headers) {
+        super(
+            new ListOf<Matcher<? super Response>>(
+                new RsHasStatus(status),
+                new RsHasHeaders(headers)
+            )
+        );
+    }
+
+    /**
+     * Ctor.
+     * @param status Expected status
+     * @param headers Matchers for expected headers
+     */
+    public ResponseMatcher(final RsStatus status, final IsHeader... headers) {
         super(
             new ListOf<Matcher<? super Response>>(
                 new RsHasStatus(status),

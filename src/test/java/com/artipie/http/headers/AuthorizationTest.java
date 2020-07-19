@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.http.rs;
+package com.artipie.http.headers;
 
 import com.artipie.http.Headers;
 import org.hamcrest.MatcherAssert;
@@ -30,38 +30,70 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test case for {@link ContentLength}.
+ * Test case for {@link Authorization}.
  *
- * @since 0.10
+ * @since 0.12
  */
-public final class ContentLengthTest {
+public final class AuthorizationTest {
+
+    @Test
+    void shouldHaveExpectedName() {
+        MatcherAssert.assertThat(
+            new Authorization("Basic abc").getKey(),
+            new IsEqual<>("Authorization")
+        );
+    }
 
     @Test
     void shouldHaveExpectedValue() {
+        final String value = "Basic 123";
         MatcherAssert.assertThat(
-            new ContentLength("10").getKey(),
-            new IsEqual<>("Content-Length")
+            new Authorization(value).getValue(),
+            new IsEqual<>(value)
         );
     }
 
     @Test
-    void shouldExtractLongValueFromHeaders() {
-        final long length = 123;
-        final ContentLength header = new ContentLength(
+    void shouldExtractValueFromHeaders() {
+        final String value = "Bearer abc";
+        final Authorization header = new Authorization(
             new Headers.From(
-                new Header("Content-Type", "application/octet-stream"),
-                new Header("content-length", String.valueOf(length)),
+                new Header("Content-Length", "11"),
+                new Header("authorization", value),
                 new Header("X-Something", "Some Value")
             )
         );
-        MatcherAssert.assertThat(header.longValue(), new IsEqual<>(length));
+        MatcherAssert.assertThat(header.getValue(), new IsEqual<>(value));
     }
 
     @Test
-    void shouldFailToExtractLongValueFromEmptyHeaders() {
+    void shouldFailToExtractValueFromEmptyHeaders() {
         Assertions.assertThrows(
             IllegalStateException.class,
-            () -> new ContentLength(Headers.EMPTY).longValue()
+            () -> new Authorization(Headers.EMPTY).getValue()
+        );
+    }
+
+    @Test
+    void shouldFailToExtractValueWhenNoAuthorizationHeaders() {
+        Assertions.assertThrows(
+            IllegalStateException.class,
+            () -> new Authorization(
+                new Headers.From("Content-Type", "text/plain")
+            ).getValue()
+        );
+    }
+
+    @Test
+    void shouldFailToExtractValueFromMultipleHeaders() {
+        Assertions.assertThrows(
+            IllegalStateException.class,
+            () -> new Authorization(
+                new Headers.From(
+                    new Authorization("Bearer one"),
+                    new Authorization("Bearer two")
+                )
+            ).getValue()
         );
     }
 }

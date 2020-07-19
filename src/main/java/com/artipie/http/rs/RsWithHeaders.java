@@ -27,7 +27,6 @@ package com.artipie.http.rs;
 import com.artipie.http.Connection;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
-import com.google.common.collect.Iterables;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
@@ -135,7 +134,7 @@ public final class RsWithHeaders implements Response {
         ) {
             return this.origin.accept(
                 status,
-                new Headers.From(Iterables.concat(this.headers, hrs)),
+                new Headers.From(this.headers, hrs),
                 body
             );
         }

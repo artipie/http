@@ -48,6 +48,26 @@ public final class RequestLine {
 
     /**
      * Ctor.
+     *
+     * @param method Request method.
+     * @param uri Request URI.
+     */
+    public RequestLine(final RqMethod method, final String uri) {
+        this(method.value(), uri);
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param method Request method.
+     * @param uri Request URI.
+     */
+    public RequestLine(final String method, final String uri) {
+        this(method, uri, "HTTP/1.1");
+    }
+
+    /**
+     * Ctor.
      * @param method The http method.
      * @param uri The http uri.
      * @param version The http version.

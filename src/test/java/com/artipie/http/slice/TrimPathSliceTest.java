@@ -130,6 +130,23 @@ final class TrimPathSliceTest {
         );
     }
 
+    @Test
+    void dontTrimTwice() throws Exception {
+        final String prefix = "/one";
+        verify(
+            new TrimPathSlice(
+                new TrimPathSlice(
+                    new AssertSlice(
+                        new RqLineHasUri(new RqLineHasUri.HasPath("/one/two"))
+                    ),
+                    prefix
+                ),
+                prefix
+            ),
+            requestLine("/one/one/two")
+        );
+    }
+
     private static RequestLine requestLine(final String path) {
         return new RequestLine("GET", path, "HTTP/1.1");
     }

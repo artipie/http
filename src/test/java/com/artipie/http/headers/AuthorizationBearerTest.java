@@ -21,47 +21,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.http.rs;
+package com.artipie.http.headers;
 
-import com.artipie.asto.Content;
-import com.artipie.http.headers.Header;
-import com.artipie.http.hm.ResponseMatcher;
-import com.artipie.http.hm.RsHasHeaders;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test for {@link RsWithBody}.
- * @since 0.9
+ * Tests for {@link Authorization.Bearer}.
+ *
+ * @since 0.12
  */
-final class RsWithBodyTest {
+public final class AuthorizationBearerTest {
 
     @Test
-    void createsResponseWithStatusOkAndBody() {
-        final byte[] body = "abc".getBytes();
+    void shouldHaveExpectedValue() {
         MatcherAssert.assertThat(
-            new RsWithBody(ByteBuffer.wrap(body)),
-            new ResponseMatcher(body)
-        );
-    }
-
-    @Test
-    void appendsBody() {
-        final String body = "def";
-        MatcherAssert.assertThat(
-            new RsWithBody(new RsWithStatus(RsStatus.CREATED), body, StandardCharsets.UTF_8),
-            new ResponseMatcher(RsStatus.CREATED, body, StandardCharsets.UTF_8)
-        );
-    }
-
-    @Test
-    void appendsContentSizeHeader() {
-        final int size = 100;
-        MatcherAssert.assertThat(
-            new RsWithBody(StandardRs.EMPTY, new Content.From(new byte[size])),
-            new RsHasHeaders(new Header("Content-Length", String.valueOf(size)))
+            new Authorization.Bearer("mF_9.B5f-4.1JqM").getValue(),
+            new IsEqual<>("Bearer mF_9.B5f-4.1JqM")
         );
     }
 }

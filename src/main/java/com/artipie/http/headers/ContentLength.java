@@ -21,27 +21,47 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.http.rs;
+package com.artipie.http.headers;
 
-import com.artipie.http.headers.Header;
-import com.artipie.http.hm.RsHasHeaders;
-import org.cactoos.map.MapEntry;
-import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Test;
+import com.artipie.http.Headers;
+import com.artipie.http.rq.RqHeaders;
 
 /**
- * Test case for {@link RsWithHeaders}.
- * @since 0.9
+ * Content-Length header.
+ *
+ * @since 0.10
  */
-public class RsWithHeadersTest {
+public final class ContentLength extends Header.Wrap {
 
-    @Test
-    void testRsWithHeadersMapEntry() {
-        final String name = "Content-Type";
-        final String value = "text/plain; charset=us-ascii";
-        MatcherAssert.assertThat(
-            new RsWithHeaders(new RsWithStatus(RsStatus.OK), new MapEntry<>(name, value)),
-            new RsHasHeaders(new Header(name, value))
-        );
+    /**
+     * Header name.
+     */
+    public static final String NAME = "Content-Length";
+
+    /**
+     * Ctor.
+     *
+     * @param value Header value.
+     */
+    public ContentLength(final String value) {
+        super(new Header(ContentLength.NAME, value));
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param headers Headers to extract header from.
+     */
+    public ContentLength(final Headers headers) {
+        this(new RqHeaders.Single(headers, ContentLength.NAME).asString());
+    }
+
+    /**
+     * Read header as long value.
+     *
+     * @return Header value.
+     */
+    public long longValue() {
+        return Long.parseLong(this.getValue());
     }
 }

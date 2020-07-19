@@ -23,7 +23,8 @@
  */
 package com.artipie.http;
 
-import com.artipie.http.rs.Header;
+import com.artipie.http.headers.Header;
+import com.google.common.collect.Iterables;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -63,7 +64,43 @@ public interface Headers extends Iterable<Map.Entry<String, String>> {
          * @param value Header value.
          */
         public From(final String name, final String value) {
-            this(Collections.singleton(new Header(name, value)));
+            this(new Header(name, value));
+        }
+
+        /**
+         * Ctor.
+         *
+         * @param origin Origin headers.
+         * @param name Additional header name.
+         * @param value Additional header value.
+         */
+        public From(
+            final Iterable<Map.Entry<String, String>> origin,
+            final String name, final String value
+        ) {
+            this(origin, new Header(name, value));
+        }
+
+        /**
+         * Ctor.
+         *
+         * @param header Header.
+         */
+        public From(final Map.Entry<String, String> header) {
+            this(Collections.singleton(header));
+        }
+
+        /**
+         * Ctor.
+         *
+         * @param origin Origin headers.
+         * @param additional Additional headers.
+         */
+        public From(
+            final Iterable<Map.Entry<String, String>> origin,
+            final Map.Entry<String, String> additional
+        ) {
+            this(origin, Collections.singleton(additional));
         }
 
         /**
@@ -74,6 +111,33 @@ public interface Headers extends Iterable<Map.Entry<String, String>> {
         @SafeVarargs
         public From(final Map.Entry<String, String>... origin) {
             this(Arrays.asList(origin));
+        }
+
+        /**
+         * Ctor.
+         *
+         * @param origin Origin headers.
+         * @param additional Additional headers.
+         */
+        @SafeVarargs
+        public From(
+            final Iterable<Map.Entry<String, String>> origin,
+            final Map.Entry<String, String>... additional
+        ) {
+            this(origin, Arrays.asList(additional));
+        }
+
+        /**
+         * Ctor.
+         *
+         * @param origin Origin headers.
+         * @param additional Additional headers.
+         */
+        public From(
+            final Iterable<Map.Entry<String, String>> origin,
+            final Iterable<Map.Entry<String, String>> additional
+        ) {
+            this(Iterables.concat(origin, additional));
         }
 
         /**

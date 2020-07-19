@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package com.artipie.http.rs;
+package com.artipie.http.headers;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;

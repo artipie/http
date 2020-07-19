@@ -23,10 +23,10 @@
  */
 package com.artipie.http.auth;
 
+import com.artipie.http.headers.Header;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
-import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.SliceSimple;

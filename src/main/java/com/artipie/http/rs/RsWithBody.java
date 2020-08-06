@@ -120,6 +120,16 @@ public final class RsWithBody implements Response {
         return withHeaders(this.origin, this.body.size()).send(new ConWithBody(con, this.body));
     }
 
+    @Override
+    public String toString() {
+        return String.format(
+            "(%s: origin='%s', body='%s')",
+            this.getClass().getSimpleName(),
+            this.origin.toString(),
+            this.body.toString()
+        );
+    }
+
     /**
      * Wrap response with headers if size provided.
      * @param origin Origin response

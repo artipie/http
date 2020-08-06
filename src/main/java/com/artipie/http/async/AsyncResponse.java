@@ -60,4 +60,13 @@ public final class AsyncResponse implements Response {
     public CompletionStage<Void> send(final Connection connection) {
         return this.future.thenCompose(rsp -> rsp.send(connection));
     }
+
+    @Override
+    public String toString() {
+        return String.format(
+            "(%s: %s)",
+            this.getClass().getSimpleName(),
+            this.future.toString()
+        );
+    }
 }

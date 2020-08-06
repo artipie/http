@@ -39,12 +39,14 @@ public enum StandardRs implements Response {
      * Empty response.
      */
     EMPTY(con -> con.accept(RsStatus.OK, Headers.EMPTY, Flowable.empty())),
-
+    /**
+     * OK 200 response.
+     */
+    OK(EMPTY),
     /**
      * Not found response.
      */
     NOT_FOUND(new RsWithStatus(RsStatus.NOT_FOUND)),
-
     /**
      * Not found with json.
      */

@@ -23,6 +23,7 @@
  */
 package com.artipie.http.hm;
 
+import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithHeaders;
@@ -55,7 +56,7 @@ class RsHasHeadersTest {
             new RsWithStatus(RsStatus.OK),
             Arrays.asList(type, length)
         );
-        final RsHasHeaders matcher = new RsHasHeaders(Arrays.asList(length, type));
+        final RsHasHeaders matcher = new RsHasHeaders(new Headers.From(length, type));
         MatcherAssert.assertThat(
             matcher.matches(response),
             new IsEqual<>(true)

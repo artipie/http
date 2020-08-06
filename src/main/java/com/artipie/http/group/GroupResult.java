@@ -27,7 +27,9 @@ import com.artipie.http.Connection;
 import com.artipie.http.Headers;
 import com.artipie.http.rs.RsStatus;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -84,6 +86,11 @@ final class GroupResult {
     private final Publisher<ByteBuffer> body;
 
     /**
+     * Completed flag.
+     */
+    private final AtomicBoolean completed;
+
+    /**
      * New response result.
      * @param status Response status
      * @param headers Response headers
@@ -94,6 +101,7 @@ final class GroupResult {
         this.status = status;
         this.headers = headers;
         this.body = body;
+        this.completed = new AtomicBoolean();
     }
 
     /**
@@ -102,7 +110,13 @@ final class GroupResult {
      * @return Future
      */
     public CompletionStage<Void> replay(final Connection con) {
-        return con.accept(this.status, this.headers, this.body);
+        final CompletionStage<Void> res;
+        if (this.completed.compareAndSet(false, true)) {
+            res = con.accept(this.status, this.headers, this.body);
+        } else {
+            res = CompletableFuture.completedFuture(null);
+        }
+        return res;
     }
 
     /**
@@ -119,6 +133,8 @@ final class GroupResult {
      * Cancel response body stream.
      */
     void cancel() {
-        this.body.subscribe(GroupResult.CANCEL_SUB);
+        if (this.completed.compareAndSet(false, true)) {
+            this.body.subscribe(GroupResult.CANCEL_SUB);
+        }
     }
 }

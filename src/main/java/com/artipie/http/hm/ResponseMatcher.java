@@ -24,9 +24,9 @@
 package com.artipie.http.hm;
 
 import com.artipie.http.Response;
-import com.artipie.http.headers.Header;
 import com.artipie.http.rs.RsStatus;
 import java.nio.charset.Charset;
+import java.util.Map;
 import org.cactoos.list.ListOf;
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -39,11 +39,37 @@ public final class ResponseMatcher extends AllOf<Response> {
 
     /**
      * Ctor.
+     *
+     * @param status Expected status
+     * @param headers Expected headers
+     * @param body Expected body
+     */
+    public ResponseMatcher(
+        final RsStatus status,
+        final Iterable<? extends Map.Entry<String, String>> headers,
+        final byte[] body
+    ) {
+        super(
+            new ListOf<Matcher<? super Response>>(
+                new RsHasStatus(status),
+                new RsHasHeaders(headers),
+                new RsHasBody(body)
+            )
+        );
+    }
+
+    /**
+     * Ctor.
      * @param status Expected status
      * @param body Expected body
      * @param headers Expected headers
      */
-    public ResponseMatcher(final RsStatus status, final byte[] body, final Header... headers) {
+    @SafeVarargs
+    public ResponseMatcher(
+        final RsStatus status,
+        final byte[] body,
+        final Map.Entry<String, String>... headers
+    ) {
         super(
             new ListOf<Matcher<? super Response>>(
                 new RsHasStatus(status),
@@ -111,9 +137,10 @@ public final class ResponseMatcher extends AllOf<Response> {
 
     /**
      * Ctor.
+     *
      * @param headers Expected headers
      */
-    public ResponseMatcher(final Header... headers) {
+    public ResponseMatcher(final Iterable<? extends Map.Entry<String, String>> headers) {
         super(
             new ListOf<Matcher<? super Response>>(
                 new RsHasStatus(RsStatus.OK),
@@ -124,10 +151,43 @@ public final class ResponseMatcher extends AllOf<Response> {
 
     /**
      * Ctor.
+     * @param headers Expected headers
+     */
+    @SafeVarargs
+    public ResponseMatcher(final Map.Entry<String, String>... headers) {
+        super(
+            new ListOf<Matcher<? super Response>>(
+                new RsHasStatus(RsStatus.OK),
+                new RsHasHeaders(headers)
+            )
+        );
+    }
+
+    /**
+     * Ctor.
+     *
      * @param status Expected status
      * @param headers Expected headers
      */
-    public ResponseMatcher(final RsStatus status, final Header... headers) {
+    public ResponseMatcher(
+        final RsStatus status,
+        final Iterable<? extends Map.Entry<String, String>> headers
+    ) {
+        super(
+            new ListOf<Matcher<? super Response>>(
+                new RsHasStatus(status),
+                new RsHasHeaders(headers)
+            )
+        );
+    }
+
+    /**
+     * Ctor.
+     * @param status Expected status
+     * @param headers Expected headers
+     */
+    @SafeVarargs
+    public ResponseMatcher(final RsStatus status, final Map.Entry<String, String>... headers) {
         super(
             new ListOf<Matcher<? super Response>>(
                 new RsHasStatus(status),
@@ -141,7 +201,11 @@ public final class ResponseMatcher extends AllOf<Response> {
      * @param status Expected status
      * @param headers Matchers for expected headers
      */
-    public ResponseMatcher(final RsStatus status, final IsHeader... headers) {
+    @SafeVarargs
+    public ResponseMatcher(
+        final RsStatus status,
+        final Matcher<? super Map.Entry<String, String>>... headers
+    ) {
         super(
             new ListOf<Matcher<? super Response>>(
                 new RsHasStatus(status),

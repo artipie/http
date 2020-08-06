@@ -69,9 +69,7 @@ final class GroupConnection implements Connection {
         final Publisher<ByteBuffer> body) {
         synchronized (this.results) {
             return this.results.complete(
-                this.pos,
-                new GroupResult(status, headers, body),
-                this.origin
+                this.pos, new GroupResult(status, headers, body), this.origin
             );
         }
     }

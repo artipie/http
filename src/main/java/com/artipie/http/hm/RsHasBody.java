@@ -30,6 +30,7 @@ import com.artipie.http.Response;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,6 +51,15 @@ public final class RsHasBody extends TypeSafeMatcher<Response> {
      * Body matcher.
      */
     private final Matcher<byte[]> body;
+
+    /**
+     * Check response has string body in charset.
+     * @param body Body string
+     * @param charset Charset encoding
+     */
+    public RsHasBody(final String body, final Charset charset) {
+        this(body.getBytes(charset));
+    }
 
     /**
      * Ctor.

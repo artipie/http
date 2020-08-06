@@ -28,7 +28,7 @@ import com.artipie.http.Response;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
 /**
  * Group response.
@@ -54,14 +54,19 @@ final class GroupResponse implements Response {
 
     @Override
     public CompletionStage<Void> send(final Connection con) {
-        final GroupResults results = new GroupResults(this.responses.size());
-        return CompletableFuture.allOf(
-            IntStream.range(0, this.responses.size())
-                .mapToObj(
-                    pos -> this.responses.get(pos)
-                        .send(new GroupConnection(con, pos, results))
-                        .toCompletableFuture()
-                ).toArray(CompletableFuture<?>[]::new)
+        final CompletableFuture<Void> future = new CompletableFuture<>();
+        final GroupResults results = new GroupResults(this.responses.size(), future);
+        for (int pos = 0; pos < this.responses.size(); ++pos) {
+            this.responses.get(pos).send(new GroupConnection(con, pos, results));
+        }
+        return future;
+    }
+
+    @Override
+    public String toString() {
+        return String.format(
+            "%s: [%s]", this.getClass().getSimpleName(),
+            this.responses.stream().map(Object::toString).collect(Collectors.joining(", "))
         );
     }
 }

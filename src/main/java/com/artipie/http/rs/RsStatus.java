@@ -33,109 +33,97 @@ import javax.annotation.Nullable;
  * @since 0.4
  */
 public enum RsStatus {
-
+    /**
+     * Status <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/100">Continue</a>.
+     */
+    CONTINUE("100"),
     /**
      * OK.
      */
     OK("200"),
-
     /**
      * Created.
      */
     CREATED("201"),
-
     /**
      * Accepted.
      */
     ACCEPTED("202"),
-
     /**
      * No Content.
      */
     NO_CONTENT("204"),
-
     /**
      * Moved Permanently.
      */
     MOVED_PERMANENTLY("301"),
-
     /**
      * Found.
      */
     FOUND("302"),
-
     /**
      * Not Modified.
      */
     NOT_MODIFIED("304"),
-
     /**
      * Temporary Redirect.
      */
     @SuppressWarnings("PMD.LongVariable")
     TEMPORARY_REDIRECT("307"),
-
     /**
      * Bad Request.
      */
     BAD_REQUEST("400"),
-
     /**
      * Unauthorized.
      */
     UNAUTHORIZED("401"),
-
     /**
      * Forbidden.
      */
     FORBIDDEN("403"),
-
     /**
      * Not Found.
      */
     NOT_FOUND("404"),
-
     /**
      * Method Not Allowed.
      */
     @SuppressWarnings("PMD.LongVariable")
     METHOD_NOT_ALLOWED("405"),
-
     /**
      * Request Time-out.
      */
     REQUEST_TIMEOUT("408"),
-
     /**
      * Conflict.
      */
     CONFLICT("409"),
-
     /**
      * Length Required.
      */
     LENGTH_REQUIRED("411"),
-
     /**
      * Payload Too Large.
      */
     PAYLOAD_TOO_LARGE("413"),
-
     /**
      * Requested Range Not Satisfiable.
      */
     BAD_RANGE("416"),
-
+    /**
+     * Status <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/417">
+     * Expectation Failed</a>.
+     */
+    EXPECTATION_FAILED("417"),
     /**
      * Internal Server Error.
      */
     INTERNAL_ERROR("500"),
-
     /**
      * Not Implemented.
      */
     NOT_IMPLEMENTED("501"),
-
     /**
      * Service Unavailable.
      */
@@ -206,7 +194,5 @@ public enum RsStatus {
                     )
                 );
         }
-
     }
-
 }

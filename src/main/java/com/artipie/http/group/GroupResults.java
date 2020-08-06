@@ -24,19 +24,17 @@
 package com.artipie.http.group;
 
 import com.artipie.http.Connection;
-import com.artipie.http.rs.RsStatus;
-import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.rs.StandardRs;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Group response results aggregator.
- * <p>This class is not thread safe.</p>
+ * @implNote This class is not thread safe and should be synchronized
  * @since 0.11
  */
 final class GroupResults {
@@ -47,25 +45,27 @@ final class GroupResults {
     private final List<GroupResult> list;
 
     /**
-     * Done flag.
+     * Completion future.
      */
-    private final AtomicBoolean done;
+    private final CompletableFuture<Void> future;
 
     /**
      * New results aggregator.
      * @param cap Capacity
+     * @param future Future to complete when all results are done
      */
-    GroupResults(final int cap) {
-        this(new ArrayList<>(Collections.nCopies(cap, null)));
+    GroupResults(final int cap, final CompletableFuture<Void> future) {
+        this(new ArrayList<>(Collections.nCopies(cap, null)), future);
     }
 
     /**
      * Primary constructor.
      * @param list List of results
+     * @param future Future to complete when all results are done
      */
-    private GroupResults(final List<GroupResult> list) {
+    private GroupResults(final List<GroupResult> list, final CompletableFuture<Void> future) {
         this.list = list;
-        this.done = new AtomicBoolean();
+        this.future = future;
     }
 
     /**
@@ -85,12 +85,12 @@ final class GroupResults {
     @SuppressWarnings("PMD.OnlyOneReturn")
     public CompletionStage<Void> complete(final int order, final GroupResult result,
         final Connection con) {
-        if (order >= this.list.size()) {
-            throw new IllegalStateException("Wrong order of result");
-        }
-        if (this.done.get()) {
+        if (this.future.isDone()) {
             result.cancel();
             return CompletableFuture.completedFuture(null);
+        }
+        if (order >= this.list.size()) {
+            throw new IllegalStateException("Wrong order of result");
         }
         this.list.set(order, result);
         for (int pos = 0; pos < this.list.size(); ++pos) {
@@ -99,13 +99,11 @@ final class GroupResults {
                 return CompletableFuture.completedFuture(null);
             }
             if (target.success()) {
-                this.done.set(true);
-                this.list.remove(target);
-                this.list.stream().filter(Objects::nonNull).forEach(GroupResult::cancel);
-                return target.replay(con);
+                return target.replay(con).thenRun(
+                    () -> this.list.stream().filter(Objects::nonNull).forEach(GroupResult::cancel)
+                ).thenRun(() -> this.future.complete(null));
             }
         }
-        this.done.set(true);
-        return new RsWithStatus(RsStatus.NOT_FOUND).send(con);
+        return StandardRs.NOT_FOUND.send(con).thenRun(() -> this.future.complete(null));
     }
 }

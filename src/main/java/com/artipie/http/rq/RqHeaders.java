@@ -28,7 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import org.cactoos.Text;
-import org.cactoos.collection.Filtered;
+import org.cactoos.iterable.Filtered;
 import org.cactoos.list.ListEnvelope;
 import org.cactoos.list.Mapped;
 

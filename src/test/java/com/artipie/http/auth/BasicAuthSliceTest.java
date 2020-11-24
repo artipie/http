@@ -39,6 +39,7 @@ import com.artipie.http.slice.SliceSimple;
 import java.util.Optional;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -132,6 +133,27 @@ final class BasicAuthSliceTest {
                 new RsHasStatus(RsStatus.OK),
                 new RequestLine(RqMethod.GET, "/resource"),
                 new Headers.From(new Authorization.Basic("alice", "12345")),
+                Content.EMPTY
+            )
+        );
+    }
+
+    @Test
+    @Disabled
+    void returnForbiddenIfPermissionsProhibit() {
+        final String user = "alladin";
+        final String pswd = "notopensesame";
+        final Permissions forbidden = (usr, perm) -> !usr.name().equals(user);
+        MatcherAssert.assertThat(
+            new BasicAuthSlice(
+                new SliceSimple(StandardRs.OK),
+                new Authentication.Single(user, pswd),
+                new Permission.ByName(forbidden, Action.Standard.READ)
+            ),
+            new SliceHasResponse(
+                new RsHasStatus(RsStatus.FORBIDDEN),
+                new RequestLine(RqMethod.GET, "/api"),
+                new Headers.From(new Authorization.Basic(user, pswd)),
                 Content.EMPTY
             )
         );

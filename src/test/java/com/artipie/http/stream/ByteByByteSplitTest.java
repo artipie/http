@@ -56,16 +56,15 @@ public final class ByteByByteSplitTest {
         final ByteByByteSplit split = new ByteByByteSplit("--d398737b067c2e88--\n".getBytes());
         this.buffersOfOneByteFlow(mbody).subscribe(split);
         AtomicLong al = new AtomicLong(0);
-        List<List<ByteBuffer>> lists = Flowable.fromPublisher(split).map(pb -> {
-            List<ByteBuffer> ls = Flowable.fromPublisher(pb).toList().blockingGet();
-            ls.add(ByteBuffer.wrap(("'" +al.incrementAndGet() + "'").getBytes()));
-            return ls;
-        }).toList().blockingGet();
+        Flowable<ByteBuffer> byteBufferFlowable = Flowable.fromPublisher(split).flatMap(mp -> {
+            System.out.println("al" + al.incrementAndGet());
+            return mp;
+        });
+        List<ByteBuffer> lists = Flowable.fromPublisher(byteBufferFlowable).toList().blockingGet();
 
-        for(List<ByteBuffer> st: lists){
-            System.out.println("ls  " + st.size());
-            System.out.println(new ByteFlowAsString(Flowable.fromIterable(st)).value());
-        }
+            System.out.println("ls  " + lists.size());
+            System.out.println(new ByteFlowAsString(Flowable.fromIterable(lists)).value());
+
 //        MatcherAssert.assertThat(
 //            new ByteFlowAsString(split).value(),
 //            new IsEqual<>("--d398737b067c2e88\n" +
@@ -73,7 +72,7 @@ public final class ByteByByteSplitTest {
 //                "content-length: 17\n" +
 //                "content-type: text/plain; charset=UTF-8\n" +
 //                "\n" +
-//                "Hello worrrrld!!!\n"
+//                "Hello worrrrld!!!\n123"
 //            )
 //        );
     }

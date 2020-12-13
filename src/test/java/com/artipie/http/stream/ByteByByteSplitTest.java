@@ -26,6 +26,9 @@ package com.artipie.http.stream;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
@@ -48,19 +51,31 @@ public final class ByteByByteSplitTest {
             "content-type: text/plain; charset=UTF-8\n" +
             "\n" +
             "Hello worrrrld!!!\n" +
-            "--d398737b067c2e88--\n";
+            "--d398737b067c2e88--\n123";
+        System.out.println(mbody.length());
         final ByteByByteSplit split = new ByteByByteSplit("--d398737b067c2e88--\n".getBytes());
         this.buffersOfOneByteFlow(mbody).subscribe(split);
-        MatcherAssert.assertThat(
-            new ByteFlowAsString(split).value(),
-            new IsEqual<>("--d398737b067c2e88\n" +
-                "content-disposition: form-data; name=\"hello\"; filename=\"text.txt\"\n" +
-                "content-length: 17\n" +
-                "content-type: text/plain; charset=UTF-8\n" +
-                "\n" +
-                "Hello worrrrld!!!\n"
-            )
-        );
+        AtomicLong al = new AtomicLong(0);
+        List<List<ByteBuffer>> lists = Flowable.fromPublisher(split).map(pb -> {
+            List<ByteBuffer> ls = Flowable.fromPublisher(pb).toList().blockingGet();
+            ls.add(ByteBuffer.wrap(("'" +al.incrementAndGet() + "'").getBytes()));
+            return ls;
+        }).toList().blockingGet();
+
+        for(List<ByteBuffer> st: lists){
+            System.out.println("ls  " + st.size());
+            System.out.println(new ByteFlowAsString(Flowable.fromIterable(st)).value());
+        }
+//        MatcherAssert.assertThat(
+//            new ByteFlowAsString(split).value(),
+//            new IsEqual<>("--d398737b067c2e88\n" +
+//                "content-disposition: form-data; name=\"hello\"; filename=\"text.txt\"\n" +
+//                "content-length: 17\n" +
+//                "content-type: text/plain; charset=UTF-8\n" +
+//                "\n" +
+//                "Hello worrrrld!!!\n"
+//            )
+//        );
     }
 
     @Test

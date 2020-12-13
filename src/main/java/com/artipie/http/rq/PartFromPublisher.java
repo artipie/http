@@ -41,27 +41,34 @@ import org.reactivestreams.Subscriber;
 public final class PartFromPublisher implements Part {
 
     /**
-     * The source.
+     * The headers of the part.
      */
-    private final Publisher<ByteBuffer> publisher;
+    private final Iterable<Map.Entry<String, String>> headers;
+
+    /**
+     * The body of the part.
+     */
+    private final Publisher<ByteBuffer> body;
 
     /**
      * Ctor.
      *
-     * @param publisher The publisher to create part from.
+     * @param headers The headers of the part.
+     * @param body The body of the part.
      */
-    public PartFromPublisher(final Publisher<ByteBuffer> publisher) {
-        this.publisher = publisher;
+    public PartFromPublisher(final Iterable<Map.Entry<String, String>> headers, final Publisher<ByteBuffer> body) {
+        this.headers = headers;
+        this.body = body;
     }
 
     @Override
     public Iterable<Map.Entry<String, String>> headers() {
-        throw new IllegalStateException("Not implemented");
+        return headers;
     }
 
     @Override
     public void subscribe(final Subscriber<? super ByteBuffer> sub) {
-        throw new IllegalStateException("Not implemented");
+        body.subscribe(sub);
     }
 
 }

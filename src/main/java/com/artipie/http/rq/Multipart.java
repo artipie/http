@@ -28,6 +28,8 @@ import com.artipie.http.stream.ByteByByteSplit;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -100,7 +102,7 @@ public final class Multipart implements Processor<ByteBuffer, Part> {
      */
     public Multipart(final Processor<ByteBuffer, Publisher<ByteBuffer>> processor) {
         this.subscriber = processor;
-        this.publisher = Flowable.fromPublisher(processor).map(PartFromPublisher::new);
+        this.publisher = Flowable.fromPublisher(processor).map(body -> new PartFromPublisher(new ArrayList<>(), body));
     }
 
     @Override

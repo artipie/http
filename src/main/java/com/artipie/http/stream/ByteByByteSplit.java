@@ -154,7 +154,7 @@ public final class ByteByByteSplit implements Processor<ByteBuffer, Publisher<By
                 public void request(final long ask) {
                     synchronized (ByteByByteSplit.this.downSync) {
                         ByteByByteSplit.this.downDemand.updateAndGet(operand -> operand + ask);
-                        ByteByByteSplit.this.upstream.get().get().request(ask);
+                        askIfDemand();
                     }
                 }
 
@@ -205,6 +205,7 @@ public final class ByteByByteSplit implements Processor<ByteBuffer, Publisher<By
             current.reset();
             this.emit(Optional.of(current));
         }
+        askIfDemand();
     }
 
     @Override
@@ -220,6 +221,16 @@ public final class ByteByByteSplit implements Processor<ByteBuffer, Publisher<By
         synchronized (this.upSync) {
             this.upstreamTerminated.set(true);
             this.emit(Optional.of(ByteBuffer.wrap(this.ringBytes())));
+        }
+    }
+
+    /**
+     * Ask for one more byte buffer
+     */
+    private void askIfDemand() {
+        long dd = ByteByByteSplit.this.downDemand.get();
+        if (dd > 0) {
+            ByteByByteSplit.this.upstream.get().get().request(1);
         }
     }
 
@@ -295,6 +306,7 @@ public final class ByteByByteSplit implements Processor<ByteBuffer, Publisher<By
         this.downstream.get().get().onNext(
             (Publisher<ByteBuffer>) sub -> {
                 this.downDownstream.set(Optional.of(sub));
+                this.downDownDemand.set(0);
                 sub.onSubscribe(
                     new Subscription() {
                         @Override
@@ -308,10 +320,12 @@ public final class ByteByByteSplit implements Processor<ByteBuffer, Publisher<By
                         @Override
                         @SuppressWarnings("PMD.UncommentedEmptyMethodBody")
                         public void cancel() {
+                            throw new IllegalStateException("Cancel is not allowed");
                         }
                     }
                 );
             }
         );
+        this.downDemand.decrementAndGet();
     }
 }

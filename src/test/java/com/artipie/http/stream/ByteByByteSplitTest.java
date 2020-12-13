@@ -41,6 +41,29 @@ import org.junit.jupiter.api.Test;
 public final class ByteByByteSplitTest {
 
     @Test
+    public void httpSplitWorks() {
+        String mbody = "--d398737b067c2e88\n" +
+            "content-disposition: form-data; name=\"hello\"; filename=\"text.txt\"\n" +
+            "content-length: 17\n" +
+            "content-type: text/plain; charset=UTF-8\n" +
+            "\n" +
+            "Hello worrrrld!!!\n" +
+            "--d398737b067c2e88--\n";
+        final ByteByByteSplit split = new ByteByByteSplit("--d398737b067c2e88--\n".getBytes());
+        this.buffersOfOneByteFlow(mbody).subscribe(split);
+        MatcherAssert.assertThat(
+            new ByteFlowAsString(split).value(),
+            new IsEqual<>("--d398737b067c2e88\n" +
+                "content-disposition: form-data; name=\"hello\"; filename=\"text.txt\"\n" +
+                "content-length: 17\n" +
+                "content-type: text/plain; charset=UTF-8\n" +
+                "\n" +
+                "Hello worrrrld!!!\n"
+            )
+        );
+    }
+
+    @Test
     public void basicSplitWorks() {
         final ByteByByteSplit split = new ByteByByteSplit(" ".getBytes());
         this.buffersOfOneByteFlow("how are you").subscribe(split);

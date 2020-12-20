@@ -38,7 +38,6 @@ import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -55,24 +54,28 @@ public class MultipartTest {
     private static final String LOCALHOST = "localhost";
 
     @Test
-    @Disabled
     public void ableToParseBasic(@TempDir final Path dir) throws IOException {
         final Vertx vertx = Vertx.vertx();
         final int port = this.rndPort();
         final VertxSliceServer server = new VertxSliceServer(
             vertx,
             (line, headers, body) -> connection -> {
-                final Multipart mpp = new Multipart(headers);
-                body.subscribe(mpp);
-                MatcherAssert.assertThat(
-                    new ByteFlowAsString(Flowable.fromPublisher(mpp).flatMap(part -> part)).value(),
-                    new IsEqual<>("Hello worrrrld!!!Hello worrrrld!!!")
-                );
-                connection.accept(
-                    RsStatus.OK,
-                    Headers.EMPTY,
-                    Flowable.empty()
-                );
+                new Thread(
+                    () -> {
+                        final Multipart mpp = new Multipart(headers);
+                        body.subscribe(mpp);
+                        MatcherAssert.assertThat(
+                            new ByteFlowAsString(
+                                Flowable.fromPublisher(mpp).flatMap(part -> part)
+                            ).value(),
+                            new IsEqual<>("Hello worrrrld!!!\r\nHello worrrrld!!!\r\n")
+                        );
+                        connection.accept(
+                            RsStatus.OK,
+                            Headers.EMPTY,
+                            Flowable.empty()
+                        );
+                    }).start();
                 return CompletableFuture.completedFuture(null);
             },
             port

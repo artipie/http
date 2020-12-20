@@ -24,17 +24,22 @@
 
 package com.artipie.http.rq;
 
-import com.artipie.http.stream.ByteByByteSplit;
+import com.artipie.http.headers.Header;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.reactivestreams.Processor;
-import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -43,12 +48,9 @@ import org.reactivestreams.Subscription;
  * See
  * <a href="https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html">rfc1341</a>
  * spec.
- * @todo #32:60min Finish implementation.
- *  In order to ensure that multipart parser works correctly, the MultipartTest has been written.
- *  The test is disabled for now, but, when this class will be fully implemented, the test should be
- *  enable.
  * @since 0.4
  * @checkstyle ConstantUsageCheck (500 lines)
+ * @checkstyle StringLiteralsConcatenationCheck (500 lines)
  */
 @SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.UnusedPrivateField", "PMD.SingularField"})
 public final class Multipart implements Processor<ByteBuffer, Part> {
@@ -59,14 +61,24 @@ public final class Multipart implements Processor<ByteBuffer, Part> {
     private static final String CRLF = "\r\n";
 
     /**
-     * The subscriber part.
+     * The subscriber.
      */
-    private final Subscriber<ByteBuffer> subscriber;
+    private final AtomicReference<Subscriber<? super Part>> dsub;
 
     /**
-     * The publisher part.
+     * Is upstream publisher completed?
      */
-    private final Publisher<Part> publisher;
+    private final AtomicBoolean completed;
+
+    /**
+     * The buffers.
+     */
+    private final List<ByteBuffer> buffers;
+
+    /**
+     * The multipart boundary.
+     */
+    private String boundary;
 
     /**
      * Ctor.
@@ -74,7 +86,7 @@ public final class Multipart implements Processor<ByteBuffer, Part> {
      * @param headers Request headers.
      */
     public Multipart(final Iterable<Map.Entry<String, String>> headers) {
-        this(() -> boundary(headers));
+        this(() -> boundaryFromHeaders(headers));
     }
 
     /**
@@ -91,41 +103,82 @@ public final class Multipart implements Processor<ByteBuffer, Part> {
      * @param boundary Multipart body boundary
      */
     public Multipart(final String boundary) {
-        this(new ByteByByteSplit(boundary.getBytes(StandardCharsets.UTF_8)));
-    }
-
-    /**
-     * Ctor.
-     * @param processor The processor.
-     */
-    public Multipart(final Processor<ByteBuffer, Publisher<ByteBuffer>> processor) {
-        this.subscriber = processor;
-        this.publisher = Flowable.fromPublisher(processor).map(PartFromPublisher::new);
+        this.boundary = boundary;
+        this.buffers = new LinkedList<>();
+        this.dsub = new AtomicReference<>(null);
+        this.completed = new AtomicBoolean(false);
     }
 
     @Override
     public void subscribe(final Subscriber<? super Part> sub) {
-        this.publisher.subscribe(sub);
+        if (!this.dsub.compareAndSet(null, sub)) {
+            throw new IllegalStateException("Only one subscription is allowed");
+        }
+        this.justParse();
     }
 
     @Override
     public void onSubscribe(final Subscription subscription) {
-        this.subscriber.onSubscribe(subscription);
+        subscription.request(Long.MAX_VALUE);
     }
 
     @Override
     public void onNext(final ByteBuffer item) {
-        this.subscriber.onNext(item);
+        this.buffers.add(item);
     }
 
     @Override
     public void onError(final Throwable throwable) {
-        this.subscriber.onError(throwable);
+        throw new IllegalStateException(throwable);
     }
 
     @Override
     public void onComplete() {
-        this.subscriber.onComplete();
+        this.completed.set(true);
+        this.justParse();
+    }
+
+    /**
+     * Parse multipart stored at buffers.
+     */
+    private void justParse() {
+        final Subscriber<? super Part> sub = this.dsub.get();
+        if (this.completed.get() && sub != null) {
+            final ByteBuffer resulted = ByteBuffer.allocate(
+                this.buffers.stream().map(ByteBuffer::remaining).reduce(Integer::sum).orElse(0)
+            );
+            this.buffers.forEach(resulted::put);
+            resulted.flip();
+            final byte[] dst = new byte[resulted.remaining()];
+            resulted.get(dst);
+            final String str = new String(dst, StandardCharsets.UTF_8);
+            final String main = str.split("--" + this.boundary + "--" + Multipart.CRLF)[0];
+            final String[] split = main.split("--" + this.boundary);
+            Flowable.fromArray(split)
+                .filter(part -> !part.isEmpty())
+                    .map(
+                        part -> {
+                            final String[] hnb = part.split(
+                            Multipart.CRLF + Multipart.CRLF
+                            );
+                            final Iterable<Map.Entry<String, String>> headers =
+                                Arrays.stream(hnb[0].split(Multipart.CRLF))
+                                    .filter(p -> !p.isEmpty())
+                                        .map(
+                                            header -> {
+                                                final String[] hdr = header.split(": ");
+                                                return new Header(hdr[0], hdr[1]);
+                                            }).collect(Collectors.toList());
+                            final String body = hnb[1];
+                            return new PartFromPublisher(
+                                headers,
+                                Flowable.just(
+                                    ByteBuffer.wrap(body.getBytes(StandardCharsets.UTF_8))
+                                )
+                            );
+                        })
+                .subscribe(sub);
+        }
     }
 
     /**
@@ -134,7 +187,7 @@ public final class Multipart implements Processor<ByteBuffer, Part> {
      * @param headers Request headers.
      * @return Request boundary
      */
-    private static String boundary(final Iterable<Map.Entry<String, String>> headers) {
+    private static String boundaryFromHeaders(final Iterable<Map.Entry<String, String>> headers) {
         final Pattern pattern = Pattern.compile("boundary=(\\w+)");
         final String type = StreamSupport.stream(headers.spliterator(), false)
             .filter(header -> header.getKey().equalsIgnoreCase("content-type"))

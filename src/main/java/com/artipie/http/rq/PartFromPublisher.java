@@ -31,37 +31,42 @@ import org.reactivestreams.Subscriber;
 /**
  * Turn {@link org.reactivestreams.Publisher} of bytes into a {@link Part}.
  *
- * @todo #32:90min Implement delyaed publisher and header parsing.
- *  Implemented delayed publisher and header parsing. First, headers should be parsed, then we can
- *  emit the rest of the bytes.
- *
  * @since 0.7.2
  */
 @SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.UnusedPrivateField", "PMD.SingularField"})
 public final class PartFromPublisher implements Part {
 
     /**
-     * The source.
+     * The headers of the part.
      */
-    private final Publisher<ByteBuffer> publisher;
+    private final Iterable<Map.Entry<String, String>> hdrs;
+
+    /**
+     * The body of the part.
+     */
+    private final Publisher<ByteBuffer> body;
 
     /**
      * Ctor.
      *
-     * @param publisher The publisher to create part from.
+     * @param hdrs The headers of the part.
+     * @param body The body of the part.
      */
-    public PartFromPublisher(final Publisher<ByteBuffer> publisher) {
-        this.publisher = publisher;
+    public PartFromPublisher(
+        final Iterable<Map.Entry<String, String>> hdrs,
+        final Publisher<ByteBuffer> body) {
+        this.hdrs = hdrs;
+        this.body = body;
     }
 
     @Override
     public Iterable<Map.Entry<String, String>> headers() {
-        throw new IllegalStateException("Not implemented");
+        return this.hdrs;
     }
 
     @Override
     public void subscribe(final Subscriber<? super ByteBuffer> sub) {
-        throw new IllegalStateException("Not implemented");
+        this.body.subscribe(sub);
     }
 
 }

@@ -27,7 +27,7 @@ SOFTWARE.
   <parent>
     <groupId>com.artipie</groupId>
     <artifactId>ppom</artifactId>
-    <version>0.4</version>
+    <version>0.5</version>
   </parent>
   <artifactId>http</artifactId>
   <version>1.0-SNAPSHOT</version>
@@ -80,6 +80,7 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>asto</artifactId>
+      <version>0.34</version>
       <optional>true</optional>
     </dependency>
     <dependency>
@@ -117,6 +118,11 @@ SOFTWARE.
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.cqfn</groupId>
+      <artifactId>rio</artifactId>
+      <version>0.3</version>
+    </dependency>
+    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
       <version>${junit-platform.version}</version>
@@ -133,6 +139,13 @@ SOFTWARE.
       <artifactId>javax.json</artifactId>
       <version>${javax.json.version}</version>
       <scope>test</scope>
+    </dependency>
+    <!-- provided serlet deps for wrappers -->
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <version>3.1.0</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>

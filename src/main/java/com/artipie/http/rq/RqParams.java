@@ -24,7 +24,9 @@
 package com.artipie.http.rq;
 
 import com.google.common.base.Splitter;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.util.Optional;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -88,6 +90,19 @@ public final class RqParams {
                 }
             ).findFirst();
         }
-        return result;
+        return result.map(RqParams::decode);
+    }
+
+    /**
+     * Decode string using URL-encoding.
+     * @param enc Encoded string
+     * @return Decoded string
+     */
+    private static String decode(final String enc) {
+        try {
+            return URLDecoder.decode(enc, "UTF-8");
+        } catch (final UnsupportedEncodingException err) {
+            throw new IllegalStateException(err);
+        }
     }
 }

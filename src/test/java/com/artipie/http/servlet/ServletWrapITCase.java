@@ -23,10 +23,13 @@
  */
 package com.artipie.http.servlet;
 
+import com.artipie.asto.Content;
 import com.artipie.http.Headers;
 import com.artipie.http.Slice;
 import com.artipie.http.misc.RandomFreePort;
+import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rq.RqHeaders;
+import com.artipie.http.rq.RqParams;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
@@ -42,12 +45,14 @@ import java.util.List;
 import javax.servlet.GenericServlet;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import org.apache.http.client.utils.URIBuilder;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,6 +63,7 @@ import org.junit.jupiter.api.condition.JRE;
  * Integration test for servlet slice wrapper.
  * @since 0.19
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle MagicNumberCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 @EnabledForJreRange(min = JRE.JAVA_11, disabledReason = "HTTP client is not supported prior JRE_11")
@@ -133,6 +139,59 @@ final class ServletWrapITCase {
         ).statusCode();
         // @checkstyle MagicNumberCheck (1 line)
         MatcherAssert.assertThat(status, new IsEqual<>(204));
+    }
+
+    @Test
+    void echoNoContent() throws Exception {
+        this.start((line, headers, body) -> new RsWithBody(body));
+        final byte[] body = HttpClient.newHttpClient().send(
+            this.req.copy().PUT(HttpRequest.BodyPublishers.noBody()).build(),
+            HttpResponse.BodyHandlers.ofByteArray()
+        ).body();
+        MatcherAssert.assertThat(body.length, new IsEqual<>(0));
+    }
+
+    @Test
+    void internalErrorOnException() throws Exception {
+        final String msg = "Failure123!";
+        this.start(
+            (line, headers, body) -> {
+                throw new IllegalStateException(msg);
+            }
+        );
+        final HttpResponse<String> rsp = HttpClient.newHttpClient().send(
+            this.req.copy().GET().build(), HttpResponse.BodyHandlers.ofString()
+        );
+        MatcherAssert.assertThat("Status is not 500", rsp.statusCode(), new IsEqual<>(500));
+        MatcherAssert.assertThat(
+            "Body doesn't contain exception message", rsp.body(), new StringContains(msg)
+        );
+    }
+
+    @Test
+    void echoQueryParams() throws Exception {
+        this.start(
+            (line, header, body) -> new RsWithBody(
+                StandardRs.OK,
+                new Content.From(
+                    new RqParams(
+                        new RequestLineFrom(line).uri().getQuery()
+                    ).value("foo").orElse("none").getBytes()
+                )
+            )
+        );
+        final String param = "? my & param %";
+        final String echo = HttpClient.newHttpClient().send(
+            this.req.copy().uri(
+                new URIBuilder(this.req.build().uri())
+                    .addParameter("first", "1&foo=bar&foo=baz")
+                    .addParameter("foo", param)
+                    .addParameter("bar", "3")
+                    .build()
+            ).build(),
+            HttpResponse.BodyHandlers.ofString()
+        ).body();
+        MatcherAssert.assertThat(echo, new IsEqual<>(param));
     }
 
     /**

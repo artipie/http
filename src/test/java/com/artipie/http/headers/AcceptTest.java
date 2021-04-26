@@ -56,6 +56,22 @@ class AcceptTest {
     }
 
     @Test
+    void parsesAndSortsRepeatingHeaderValues() {
+        MatcherAssert.assertThat(
+            new Accept(
+                new Headers.From(
+                    // @checkstyle LineLengthCheck (2 lines)
+                    new Header("Accept", "text/html;q=0.6, application/xml;q=0.9, image/bmp;q=0.3"),
+                    new Header("Accept", "image/bmp;q=0.5, text/html, multipart/mixed, text/json;q=0.4")
+                )
+            ).values(),
+            Matchers.contains(
+                "multipart/mixed", "application/xml", "text/html", "text/json", "image/bmp"
+            )
+        );
+    }
+
+    @Test
     void parsesOnlyAcceptHeader() {
         MatcherAssert.assertThat(
             new Accept(

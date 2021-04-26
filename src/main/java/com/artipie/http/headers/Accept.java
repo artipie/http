@@ -25,10 +25,10 @@ package com.artipie.http.headers;
 
 import com.artipie.http.rq.RqHeaders;
 import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.cactoos.map.MapEntry;
+import java.util.stream.Collectors;
 
 /**
  * Accept header, check
@@ -62,23 +62,34 @@ public final class Accept {
      * @return Set or the values
      */
     public List<String> values() {
-        final List<String> res = new LinkedList<>();
+        final Map<String, Float> map = new HashMap<>();
         new RqHeaders(this.headers, Accept.NAME).stream().flatMap(
             val -> Arrays.stream(val.split(", "))
-        ).map(
+        ).forEach(
             item -> {
                 final int index = item.indexOf(";");
                 String sub = item;
-                float weight = 1;
+                final float weight;
                 if (index > 0) {
                     sub = item.substring(0, index);
                     // @checkstyle MagicNumberCheck (1 line)
                     weight = Float.parseFloat(item.substring(index + 3));
+                } else {
+                    weight = 1;
                 }
-                return new MapEntry<>(sub, weight);
+                map.compute(
+                    sub, (key, val) -> {
+                        float min = weight;
+                        if (val != null) {
+                            min = Float.min(weight, val);
+                        }
+                        return min;
+                    }
+                );
             }
-        ).sorted((one, two) -> Float.compare(one.getValue(), two.getValue()) * (-1))
-            .forEach(item -> res.add(item.getKey()));
-        return res;
+        );
+        return map.entrySet().stream()
+            .sorted((one, two) -> Float.compare(one.getValue(), two.getValue()) * (-1))
+            .map(Map.Entry::getKey).collect(Collectors.toList());
     }
 }

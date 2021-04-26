@@ -89,7 +89,7 @@ public final class Accept {
             }
         );
         return map.entrySet().stream()
-            .sorted((one, two) -> Float.compare(one.getValue(), two.getValue()) * (-1))
+            .sorted((one, two) -> Float.compare(two.getValue(), one.getValue()))
             .map(Map.Entry::getKey).collect(Collectors.toList());
     }
 }

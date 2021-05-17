@@ -27,7 +27,7 @@ SOFTWARE.
   <parent>
     <groupId>com.artipie</groupId>
     <artifactId>ppom</artifactId>
-    <version>0.5</version>
+    <version>0.5.1</version>
   </parent>
   <artifactId>http</artifactId>
   <version>1.0-SNAPSHOT</version>
@@ -51,6 +51,9 @@ SOFTWARE.
     <developerConnection>scm:git:ssh://github.com:artipie/http.git</developerConnection>
     <url>https://github.com/artipie/http/tree/master</url>
   </scm>
+  <properties>
+    <qulice.license>${project.basedir}/LICENSE.header</qulice.license>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>org.cactoos</groupId>

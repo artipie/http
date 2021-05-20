@@ -4,8 +4,8 @@
  */
 
 /**
- * Streams.
- * @since 0.4
+ * Multipart reactive support.
+ * @since 1.0
  */
-package com.artipie.http.stream;
+package com.artipie.http.rq.multipart;
 

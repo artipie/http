@@ -2,7 +2,7 @@
  * The MIT License (MIT) Copyright (c) 2020-2021 artipie.com
  * https://github.com/artipie/npm-adapter/LICENSE.txt
  */
-package com.artipie.http.rq;
+package com.artipie.http.rq.multipart;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.ext.ContentAs;

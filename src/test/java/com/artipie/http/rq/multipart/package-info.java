@@ -4,7 +4,9 @@
  */
 
 /**
- * Test for stream splitting.
- * @since 0.1
+ * Unit tests for multipart.
+ *
+ * @since 1.0
  */
-package com.artipie.http.stream;
+package com.artipie.http.rq.multipart;
+

@@ -3,7 +3,7 @@
  * https://github.com/artipie/npm-adapter/LICENSE.txt
  */
 
-package com.artipie.http.rq;
+package com.artipie.http.rq.multipart;
 
 import com.artipie.http.Headers;
 import com.artipie.http.headers.ContentType;

@@ -146,7 +146,8 @@ public final class RsWithHeaders implements Response {
                 this.headers.forEach(list::add);
                 hrs.forEach(
                     item -> {
-                        if (list.stream().noneMatch(val -> val.getKey().equals(item.getKey()))) {
+                        if (list.stream()
+                            .noneMatch(val -> val.getKey().equalsIgnoreCase(item.getKey()))) {
                             list.add(item);
                         }
                     }

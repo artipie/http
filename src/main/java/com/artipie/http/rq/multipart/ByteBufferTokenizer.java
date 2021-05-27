@@ -54,9 +54,9 @@ public final class ByteBufferTokenizer implements Closeable {
     private final Receiver receiver;
 
     /**
-     * Current buffer.
+     * Buffer acc.
      */
-    private ByteBuffer buffer;
+    private final BufAccumulator acc;
 
     /**
      * New tokenizer.
@@ -78,7 +78,7 @@ public final class ByteBufferTokenizer implements Closeable {
     public ByteBufferTokenizer(final Receiver receiver, final byte[] delim, final int cap) {
         this.receiver = receiver;
         this.delim = Arrays.copyOf(delim, delim.length);
-        this.buffer = ByteBufferTokenizer.newEmptyBuffer(cap);
+        this.acc = new BufAccumulator(cap);
     }
 
     /**
@@ -88,9 +88,7 @@ public final class ByteBufferTokenizer implements Closeable {
      */
     @SuppressWarnings("PMD.AssignmentInOperand")
     public void push(final ByteBuffer chunk) {
-        this.check();
-        this.append(chunk);
-        final byte[] arr = ByteBufferTokenizer.array(this.buffer);
+        final byte[] arr = this.acc.push(chunk).array();
         // bid is a next boundary id, offset is current offset of token + boundary
         int bid;
         int offset = 0;
@@ -104,7 +102,7 @@ public final class ByteBufferTokenizer implements Closeable {
                 continue;
             }
             // set bounds for next tokens from current offset to next delimiter id
-            this.receiver.receive(copy(this.buffer, offset, bid), true);
+            this.receiver.receive(this.acc.copyRange(offset, bid), true);
             // update offset to token position + delimiter length
             offset = bid + this.delim.length;
         }
@@ -116,16 +114,13 @@ public final class ByteBufferTokenizer implements Closeable {
             if (offset < margin) {
                 // if there are some bytes between last offset and margin, then send it
                 // to the receiver and update buffer bounds
-                this.receiver.receive(copy(this.buffer, offset, margin), false);
-                this.buffer.position(margin);
+                this.receiver.receive(this.acc.copyRange(offset, margin), false);
+                this.acc.drop(margin);
             } else {
                 // if the offset is crossing possible delimiter margin,
                 // then just reset to the offset position
-                this.buffer.position(offset);
+                this.acc.drop(offset);
             }
-            // remove processed bytes and reset buffer limits
-            this.buffer.compact();
-            this.buffer.limit(this.buffer.position());
         }
     }
 
@@ -133,53 +128,20 @@ public final class ByteBufferTokenizer implements Closeable {
     @SuppressWarnings("PMD.NullAssignment")
     public void close() {
         this.flush();
-        // assign to null means broken state, it's verified by `check` method.
-        this.buffer = null;
-    }
-
-    /**
-     * Append new chunk to current buffer. Resize buffer if not enough capacity.
-     *
-     * @param chunk To append
-     */
-    private void append(final ByteBuffer chunk) {
-        if (this.buffer.capacity() - this.buffer.limit() >= chunk.remaining()) {
-            this.buffer.limit(this.buffer.limit() + chunk.remaining());
-            this.buffer.put(chunk);
-        } else {
-            final ByteBuffer resized =
-                ByteBuffer.allocate(this.buffer.capacity() + chunk.capacity());
-            final int pos = this.buffer.position();
-            final int lim = this.buffer.limit();
-            this.buffer.flip();
-            resized.put(this.buffer);
-            resized.limit(lim + chunk.remaining());
-            resized.position(pos);
-            resized.put(chunk);
-            this.buffer = resized;
-        }
+        this.acc.close();
     }
 
     /**
      * Flush buffer, sends all remaining data to receiver.
      */
     private void flush() {
-        this.check();
-        this.buffer.flip();
-        if (this.buffer.hasRemaining()) {
-            this.receiver.receive(
-                copy(this.buffer, this.buffer.position(), this.buffer.limit()), true
-            );
+        final ByteBuffer dup = this.acc.duplicate();
+        dup.flip();
+        if (dup.hasRemaining()) {
+            this.receiver.receive(this.acc.copyRange(dup.position(), dup.limit()), true);
         } else {
             this.receiver.receive(ByteBufferTokenizer.EMPTY_BUF, true);
         }
-    }
-
-    /**
-     * Sanity check. Enabled only with assertions flag enabled.
-     */
-    private void check() {
-        assert this.buffer != null : "tokenizer was closed";
     }
 
     /**
@@ -207,51 +169,6 @@ public final class ByteBufferTokenizer implements Closeable {
             }
         }
         return res;
-    }
-
-    /**
-     * Byte array from byte buffer.
-     *
-     * @param buffer Data holder
-     * @return Byte array
-     */
-    private static byte[] array(final ByteBuffer buffer) {
-        final ByteBuffer dup = buffer.duplicate();
-        dup.flip();
-        final byte[] arr = new byte[dup.remaining()];
-        dup.get(arr);
-        return arr;
-    }
-
-    /**
-     * Copy buffer range to another buffer.
-     *
-     * @param src Buffer to copy
-     * @param pos Buffer position
-     * @param lim Buffer limit
-     * @return Readonly copy
-     */
-    private static ByteBuffer copy(final ByteBuffer src, final int pos, final int lim) {
-        final ByteBuffer dup = src.duplicate();
-        dup.limit(lim);
-        dup.position(pos);
-        final ByteBuffer slice = dup.slice();
-        final ByteBuffer res = ByteBuffer.allocate(slice.remaining());
-        res.put(slice);
-        res.flip();
-        return res.asReadOnlyBuffer();
-    }
-
-    /**
-     * Creates new empty buffer with zero position and limit.
-     *
-     * @param cap Capacity
-     * @return New buffer
-     */
-    private static ByteBuffer newEmptyBuffer(final int cap) {
-        final ByteBuffer buf = ByteBuffer.allocate(cap);
-        buf.flip();
-        return buf;
     }
 
     /**

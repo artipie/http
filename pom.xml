@@ -66,6 +66,7 @@ SOFTWARE.
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest</artifactId>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -160,6 +161,12 @@ SOFTWARE.
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>
       <version>10.0.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>wtf.g4s8</groupId>
+      <artifactId>matchers-json</artifactId>
+      <version>1.0.3</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

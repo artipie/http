@@ -137,7 +137,9 @@ public final class RsWithBody implements Response {
      */
     private static Response withHeaders(final Response origin, final Optional<Long> size) {
         return size.<Response>map(
-            val -> new RsWithHeaders(origin, new ContentLength(String.valueOf(val)))
+            val -> new RsWithHeaders(
+                origin, new Headers.From(new ContentLength(String.valueOf(val))), true
+            )
         ).orElse(origin);
     }
 

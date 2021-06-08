@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Test;
 /**
  * Test for {@link RsWithBody}.
  * @since 0.9
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle MagicNumberCheck (500 lines)
  */
 final class RsWithBodyTest {
 
@@ -52,6 +54,18 @@ final class RsWithBodyTest {
         final int size = 17;
         MatcherAssert.assertThat(
             new RsWithBody(new Content.From(new byte[size])),
+            new RsHasHeaders(new ContentLength(size))
+        );
+    }
+
+    @Test
+    void overridesContentSizeHeader() {
+        final int size = 17;
+        MatcherAssert.assertThat(
+            new RsWithBody(
+                new RsWithHeaders(StandardRs.OK, new ContentLength(100)),
+                new Content.From(new byte[size])
+            ),
             new RsHasHeaders(new ContentLength(size))
         );
     }

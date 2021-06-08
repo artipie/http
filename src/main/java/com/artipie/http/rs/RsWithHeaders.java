@@ -9,6 +9,8 @@ import com.artipie.http.Connection;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import org.reactivestreams.Publisher;
@@ -31,14 +33,31 @@ public final class RsWithHeaders implements Response {
     private final Headers headers;
 
     /**
+     * Should header value be replaced if already exist? False by default.
+     */
+    private final boolean override;
+
+    /**
+     * Ctor.
+     *
+     * @param origin Response
+     * @param headers Headers
+     * @param override Should header value be replaced if already exist?
+     */
+    public RsWithHeaders(final Response origin, final Headers headers, final boolean override) {
+        this.origin = origin;
+        this.headers = headers;
+        this.override = override;
+    }
+
+    /**
      * Ctor.
      *
      * @param origin Response
      * @param headers Headers
      */
     public RsWithHeaders(final Response origin, final Headers headers) {
-        this.origin = origin;
-        this.headers = headers;
+        this(origin, headers, false);
     }
 
     /**
@@ -75,7 +94,7 @@ public final class RsWithHeaders implements Response {
 
     @Override
     public CompletionStage<Void> send(final Connection con) {
-        return this.origin.send(new RsWithHeaders.ConWithHeaders(con, this.headers));
+        return this.origin.send(new RsWithHeaders.ConWithHeaders(con, this.headers, this.override));
     }
 
     /**
@@ -95,16 +114,24 @@ public final class RsWithHeaders implements Response {
         private final Iterable<Map.Entry<String, String>> headers;
 
         /**
+         * Should header value be replaced if already exist?
+         */
+        private final boolean override;
+
+        /**
          * Ctor.
          *
          * @param origin Connection
          * @param headers Headers
+         * @param override Should header value be replaced if already exist?
          */
         private ConWithHeaders(
             final Connection origin,
-            final Iterable<Map.Entry<String, String>> headers) {
+            final Iterable<Map.Entry<String, String>> headers,
+            final boolean override) {
             this.origin = origin;
             this.headers = headers;
+            this.override = override;
         }
 
         @Override
@@ -113,11 +140,23 @@ public final class RsWithHeaders implements Response {
             final Headers hrs,
             final Publisher<ByteBuffer> body
         ) {
-            return this.origin.accept(
-                status,
-                new Headers.From(this.headers, hrs),
-                body
-            );
+            final Headers res;
+            if (this.override) {
+                final List<Map.Entry<String, String>> list = new ArrayList<>(10);
+                this.headers.forEach(list::add);
+                hrs.forEach(
+                    item -> {
+                        if (list.stream()
+                            .noneMatch(val -> val.getKey().equalsIgnoreCase(item.getKey()))) {
+                            list.add(item);
+                        }
+                    }
+                );
+                res = new Headers.From(list);
+            } else {
+                res = new Headers.From(this.headers, hrs);
+            }
+            return this.origin.accept(status, res, body);
         }
     }
 }

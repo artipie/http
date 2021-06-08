@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 final class RqMultipartTest {
 
     @Test
-    @Disabled
+//    @Disabled
     @SuppressWarnings("PMD.AvoidDuplicateLiterals")
     void processesSimpleMultipartRequest() throws Exception {
         final String first = String.join(
@@ -37,7 +37,7 @@ final class RqMultipartTest {
             "It DOES end with a linebreak."
         );
         final String simple = String.join(
-            "\n\r",
+            "\r\n",
             String.join(
                 "\n",
                 "This is the preamble.  It is to be ignored, though it",

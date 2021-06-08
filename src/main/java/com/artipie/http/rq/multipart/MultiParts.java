@@ -4,206 +4,84 @@
  */
 package com.artipie.http.rq.multipart;
 
-import com.artipie.http.Headers;
-import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.LongUnaryOperator;
-import org.apache.commons.lang3.NotImplementedException;
-import org.reactivestreams.Publisher;
+import com.artipie.ArtipieException;
+import org.reactivestreams.Processor;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * Multipart parts publisher.
+ *
  * @since 1.0
  */
-public final class MultiParts implements Publisher<RqMultipart.Part> {
+public final class MultiParts implements Processor<ByteBuffer, RqMultipart.Part>, ByteBufferTokenizer.Receiver {
 
-    /**
-     * Upstream processor.
-     */
-    private final Worker worker;
+    private final AtomicReference<Subscriber<? super RqMultipart.Part>> downstream = new AtomicReference<>();
+    private final AtomicReference<Subscription> upstream = new AtomicReference<>();
+    private final ByteBufferTokenizer tokenizer;
+    private volatile MultiPart current;
+    private final ExecutorService exec;
 
     /**
      * New multipart parts publisher for upstream publisher.
-     * @param upstream Publisher
-     * @param exec Executor service for processing
      */
-    public MultiParts(final Publisher<ByteBuffer> upstream, final ExecutorService exec) {
-        this.worker = new Worker(upstream, exec);
+    public MultiParts(final byte[] boundary, ExecutorService exec) {
+        this.tokenizer = new ByteBufferTokenizer(this, boundary);
+        this.exec = exec;
     }
 
     @Override
-    public void subscribe(final Subscriber<? super RqMultipart.Part> subscriber) {
-        this.worker.attach(subscriber);
-    }
-
-    /**
-     * Worker runnable for multipart upstream chunks processing.
-     * @since 1.0
-     */
-    private static final class Worker implements Runnable, Subscription {
-
-        /**
-         * Dummy subscription that do nothing.
-         * It's a requirement of reactive-streams specification to
-         * call {@code onSubscribe} on subscriber before any other call.
-         */
-        private static final Subscription SUB_DUMMY = new Subscription() {
-
-            @Override
-            public void request(final long req) {
-                // do nothing
-            }
-
-            @Override
-            public void cancel() {
-                // do nothing
-            }
-        };
-
-        /**
-         * Upstream publisher.
-         */
-        private final Publisher<ByteBuffer> upstream;
-
-        /**
-         * Executor service.
-         */
-        private final ExecutorService exec;
-
-        /**
-         * Running flag.
-         */
-        private final AtomicBoolean running;
-
-        /**
-         * Demand counter.
-         */
-        private final AtomicLong demand;
-
-        /**
-         * Current downstream publisher reference.
-         */
-        private final AtomicReference<Subscriber<? super RqMultipart.Part>> downstream;
-
-        /**
-         * New worker for upstream.
-         * @param upstream Publisher
-         * @param exec Executor service
-         */
-        Worker(final Publisher<ByteBuffer> upstream, final ExecutorService exec) {
-            this.upstream = upstream;
-            this.exec = exec;
-            this.running = new AtomicBoolean();
-            this.demand = new AtomicLong();
-            this.downstream = new AtomicReference<>();
+    public void subscribe(final Subscriber<? super RqMultipart.Part> sub) {
+        if (this.downstream.compareAndSet(null, sub)) {
+            sub.onSubscribe(upstream.get());
+        } else {
+            sub.onSubscribe(DummySubscription.VALUE);
+            sub.onError(new IllegalStateException("Downstream already connected"));
+            return;
         }
-
-        @Override
-        public void run() {
-            throw new NotImplementedException(
-                String.format("Worker run is not implemented (%s)", this.upstream)
-            );
-        }
-
-        @Override
-        public void request(final long amount) {
-            this.demand.updateAndGet(Worker.addNewDemand(amount));
-            if (!this.running.compareAndSet(false, true)) {
-                this.exec.submit(this);
-            }
-        }
-
-        @Override
-        public void cancel() {
-            throw new NotImplementedException(
-                String.format("Worker cancel is not implemented (%s)", this.upstream)
-            );
-        }
-
-        /**
-         * Attach downstream and notify subscriber.
-         * @param sub Publisher
-         */
-        public void attach(final Subscriber<? super RqMultipart.Part> sub) {
-            if (this.downstream.compareAndSet(null, sub)) {
-                sub.onSubscribe(this);
-            } else {
-                sub.onSubscribe(Worker.SUB_DUMMY);
-                sub.onError(new IllegalStateException("Downstream already connected"));
-            }
-        }
-
-        /**
-         * New demand calculator.
-         * It counts boundary and special cases with {@link Long#MAX_VALUE}.
-         * @param amount New demand request
-         * @return Operator to update current demand
-         */
-        private static LongUnaryOperator addNewDemand(final long amount) {
-            return (final long old) -> {
-                final long next;
-                if (old == Long.MAX_VALUE) {
-                    next = old;
-                } else if (amount == Long.MAX_VALUE) {
-                    next = amount;
-                } else {
-                    final long tmp = old + amount;
-                    if (tmp < 0) {
-                        next = Long.MAX_VALUE;
-                    } else {
-                        next = tmp;
-                    }
-                }
-                return next;
-            };
+        if (upstream.get() != null) {
+            this.upstream.get().request(1);
         }
     }
 
-    /**
-     * Part of multipart.
-     *
-     * @since 1.0
-     */
-    public static final class PartPublisher implements Publisher<ByteBuffer> {
-
-        /**
-         * Part headers.
-         */
-        private final Headers hdr;
-
-        /**
-         * Part body.
-         */
-        private final Publisher<ByteBuffer> source;
-
-        /**
-         * New part.
-         *
-         * @param headers Part headers
-         * @param source Part body
-         */
-        public PartPublisher(final Headers headers, final Publisher<ByteBuffer> source) {
-            this.hdr = headers;
-            this.source = source;
+    @Override
+    public void onSubscribe(final Subscription sub) {
+        this.upstream.set(sub);
+        if (downstream.get() != null) {
+            sub.request(1);
         }
+    }
 
-        @Override
-        public void subscribe(final Subscriber<? super ByteBuffer> sub) {
-            this.source.subscribe(sub);
+    @Override
+    public void onNext(final ByteBuffer chunk) {
+        this.tokenizer.push(chunk);
+    }
+
+    @Override
+    public void onError(final Throwable err) {
+        this.downstream.getAndSet(null).onError(
+                new ArtipieException("Upstream failed", err)
+        );
+    }
+
+    @Override
+    public void onComplete() {
+        this.downstream.getAndSet(null).onComplete();
+    }
+
+    @Override
+    public synchronized void receive(final ByteBuffer next, final boolean end) {
+        if (this.current == null) {
+            this.current = new MultiPart(this.upstream.get(), part -> this.downstream.get().onNext(part), exec);
         }
-
-        /**
-         * Part headers.
-         *
-         * @return Headers
-         */
-        public Headers headers() {
-            return this.hdr;
+        this.current.push(next);
+        if (end) {
+            this.current.flush();
+            this.current = null;
         }
     }
 }

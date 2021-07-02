@@ -95,7 +95,7 @@ SOFTWARE.
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-web-client</artifactId>
-      <version>4.1.0</version>
+      <version>4.1.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>

@@ -9,10 +9,10 @@ updates:
       - "dependencies"
       - "bot"
     commit-message:
-      prefix: "[deps]"
+      prefix: "deps"
     assignees:
       - "g4s8"
     reviewers:
-      - "artipie/maintainers"
+      - "g4s8"
     schedule:
       interval: "daily"

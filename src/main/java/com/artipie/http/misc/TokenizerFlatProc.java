@@ -123,9 +123,12 @@ public final class TokenizerFlatProc implements Processor<ByteBuffer, ByteBuffer
     @Override
     public void receive(final ByteBuffer next, final boolean end) {
         this.upstream.receive();
-        this.accumulator.push(next);
+        this.accumulator.write(next);
         if (end) {
-            this.accumulator.read(this.downstream::onNext);
+            final ByteBuffer dst = ByteBuffer.allocate(this.accumulator.size());
+            this.accumulator.read(dst);
+            dst.flip();
+            this.downstream.onNext(dst);
             if (this.completed.get()) {
                 this.downstream.onComplete();
                 this.accumulator.close();

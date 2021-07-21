@@ -61,7 +61,7 @@ final class MultipartHeaders implements Headers {
                     final byte[] arr = this.accumulator.array();
                     final String hstr = new String(arr, StandardCharsets.US_ASCII);
                     this.cache = new Headers.From(
-                        Arrays.stream(hstr.split("\r\n")).map(
+                        Arrays.stream(hstr.split("\r\n")).filter(str -> !str.isEmpty()).map(
                             line -> {
                                 final String[] parts = line.split(":");
                                 return new Header(
@@ -84,8 +84,7 @@ final class MultipartHeaders implements Headers {
      */
     void push(final ByteBuffer chunk) {
         synchronized (this.lock) {
-            this.accumulator.push(chunk);
+            this.accumulator.write(chunk);
         }
     }
 }
-

@@ -90,7 +90,10 @@ public final class ByteBufferTokenizer implements Closeable {
      */
     @SuppressWarnings("PMD.AssignmentInOperand")
     public void push(final ByteBuffer chunk) {
-        final byte[] arr = this.acc.push(chunk).array();
+        if (this.acc.write(chunk) <= 0) {
+            return;
+        }
+        final byte[] arr = this.acc.array();
         // bid is a next boundary id, offset is current offset of token + boundary
         int bid;
         int offset = 0;

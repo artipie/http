@@ -9,12 +9,10 @@ import com.artipie.http.misc.BufAccumulator;
 import com.artipie.http.misc.ByteBufferTokenizer;
 import com.artipie.http.misc.DummySubscription;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import net.jcip.annotations.GuardedBy;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -22,6 +20,7 @@ import org.reactivestreams.Subscription;
  * Multipart request part.
  * @since 1.0
  */
+@SuppressWarnings("PMD.NullAssignment")
 final class MultiPart implements RqMultipart.Part, ByteBufferTokenizer.Receiver, Subscription {
 
     /**
@@ -40,23 +39,9 @@ final class MultiPart implements RqMultipart.Part, ByteBufferTokenizer.Receiver,
     private static final String DELIM = "\r\n\r\n";
 
     /**
-     * Header state flag.
-     */
-    private static final int STATE_HEADER = 1;
-
-    /**
-     * Body state flag.
-     */
-    private static final int STATE_BODY = 2;
-
-    /**
-     * Upstream subscription.
-     */
-    private final Subscription upstream;
-
-    /**
      * CRLF tokenizer.
      */
+    @GuardedBy("lock")
     private final ByteBufferTokenizer tokenizer;
 
     /**
@@ -65,14 +50,14 @@ final class MultiPart implements RqMultipart.Part, ByteBufferTokenizer.Receiver,
     private final MultipartHeaders hdr;
 
     /**
-     * Downstream reference.
+     * Downstream.
      */
-    private final AtomicReference<Subscriber<? super ByteBuffer>> downstream;
+    private volatile Subscriber<? super ByteBuffer> downstream;
 
     /**
-     * Current state.
+     * Head processed.
      */
-    private final AtomicInteger state;
+    private volatile boolean head;
 
     /**
      * Ready callback.
@@ -91,6 +76,7 @@ final class MultiPart implements RqMultipart.Part, ByteBufferTokenizer.Receiver,
      * before downstream subscription.
      * </p>
      */
+    @GuardedBy("lock")
     private final BufAccumulator tmpacc;
 
     /**
@@ -101,27 +87,38 @@ final class MultiPart implements RqMultipart.Part, ByteBufferTokenizer.Receiver,
     /**
      * Completed flag.
      */
-    private final AtomicBoolean completed;
+    private volatile boolean completed;
+
+    /**
+     * Completion handler.
+     */
+    private final Completion<?> completion;
+
+    /**
+     * State synchronization.
+     */
+    private final Object lock;
+
+    /**
+     * Downstream demand counter.
+     */
+    private volatile long demand;
 
     /**
      * New multipart request part.
-     * @param upstream Upstream subscription
+     * @param completion Upstream completion handler
      * @param ready Ready callback
-     * @param exec Back-pressure async executor
      */
-    MultiPart(final Subscription upstream, final Consumer<? super RqMultipart.Part> ready,
-        final ExecutorService exec) {
-        this.upstream = upstream;
+    MultiPart(final Completion<?> completion, final Consumer<? super RqMultipart.Part> ready) {
         this.ready = ready;
-        this.exec = exec;
+        this.exec = Executors.newSingleThreadExecutor();
+        this.completion = completion;
         this.tokenizer = new ByteBufferTokenizer(
             this, MultiPart.DELIM.getBytes(), MultiPart.CAP_PART
         );
         this.hdr = new MultipartHeaders(MultiPart.CAP_HEADER);
-        this.downstream = new AtomicReference<>();
-        this.state = new AtomicInteger(MultiPart.STATE_HEADER);
         this.tmpacc = new BufAccumulator(MultiPart.CAP_HEADER);
-        this.completed = new AtomicBoolean();
+        this.lock = new Object();
     }
 
     @Override
@@ -131,51 +128,27 @@ final class MultiPart implements RqMultipart.Part, ByteBufferTokenizer.Receiver,
 
     @Override
     public void subscribe(final Subscriber<? super ByteBuffer> sub) {
-        synchronized (this.downstream) {
-            if (this.downstream.get() != null) {
+        synchronized (this.lock) {
+            if (this.downstream != null) {
                 sub.onSubscribe(DummySubscription.VALUE);
                 sub.onError(new IllegalStateException("Downstream already connected"));
                 return;
             }
+            this.downstream = sub;
             sub.onSubscribe(this);
-            final ByteBuffer acc = this.tmpacc.duplicate();
-            acc.rewind();
-            if (acc.hasRemaining()) {
-                sub.onNext(acc);
-            }
-            this.tmpacc.close();
-            if (this.completed.get()) {
-                sub.onComplete();
-            } else {
-                this.downstream.set(sub);
-            }
         }
     }
 
     @Override
     public void receive(final ByteBuffer next, final boolean end) {
-        synchronized (this.downstream) {
-            final int current = this.state.get();
-            if (current == MultiPart.STATE_HEADER) {
+        synchronized (this.lock) {
+            if (this.head) {
+                this.nextChunk(next);
+            } else {
                 this.hdr.push(next);
-                this.upstream.request(1);
                 if (end) {
-                    this.state.incrementAndGet();
+                    this.head = true;
                     this.ready.accept(this);
-                }
-            } else if (current == MultiPart.STATE_BODY) {
-                final Subscriber<? super ByteBuffer> subscriber = this.downstream.get();
-                if (subscriber == null) {
-                    this.tmpacc.push(next);
-                } else {
-                    subscriber.onNext(next);
-                }
-            }
-            if (end && current == MultiPart.STATE_BODY
-                && this.completed.compareAndSet(false, true)) {
-                final Subscriber<? super ByteBuffer> sub = this.downstream.getAndSet(null);
-                if (sub != null) {
-                    sub.onComplete();
                 }
             }
         }
@@ -183,13 +156,27 @@ final class MultiPart implements RqMultipart.Part, ByteBufferTokenizer.Receiver,
 
     @Override
     public void request(final long amt) {
-        this.exec.submit(() -> this.upstream.request(amt));
+        if (amt <= 0) {
+            throw new IllegalStateException("Requested amount should be greater than zero");
+        }
+        if (this.downstream == null) {
+            return;
+        }
+        synchronized (this.lock) {
+            if (amt == Long.MAX_VALUE || this.demand == Long.MAX_VALUE || amt + this.demand < 0) {
+                this.demand = Long.MAX_VALUE;
+            } else {
+                this.demand += amt;
+            }
+        }
+        this.exec.submit(this::deliver);
     }
 
     @Override
     public void cancel() {
-        this.downstream.set(null);
-        this.upstream.cancel();
+        synchronized (this.lock) {
+            this.downstream = null;
+        }
     }
 
     /**
@@ -197,13 +184,65 @@ final class MultiPart implements RqMultipart.Part, ByteBufferTokenizer.Receiver,
      * @param chunk Chunk buffer
      */
     void push(final ByteBuffer chunk) {
-        this.tokenizer.push(chunk);
+        synchronized (this.lock) {
+            if (this.head) {
+                this.nextChunk(chunk);
+            } else {
+                this.tokenizer.push(chunk);
+                if (this.head) {
+                    this.tokenizer.close();
+                }
+            }
+        }
     }
 
     /**
      * Flush all data in temporary buffers.
      */
     void flush() {
-        this.push(ByteBuffer.wrap(MultiPart.DELIM.getBytes(StandardCharsets.US_ASCII)));
+        synchronized (this.lock) {
+            if (!this.head) {
+                this.tokenizer.close();
+            }
+            this.completed = true;
+            this.exec.submit(this::deliver);
+        }
+    }
+
+    /**
+     * Process next chunk of body data.
+     * @param next Next buffer
+     */
+    private void nextChunk(final ByteBuffer next) {
+        this.tmpacc.write(next);
+        if (this.downstream != null) {
+            this.exec.submit(this::deliver);
+        }
+    }
+
+    /**
+     * Deliver accumulated data to downstream.
+     */
+    private void deliver() {
+        synchronized (this.lock) {
+            while (this.demand > 0) {
+                final ByteBuffer out = ByteBuffer.allocate(4096);
+                if (this.tmpacc.read(out) < 0) {
+                    break;
+                }
+                out.flip();
+                this.downstream.onNext(out);
+                if (this.demand != Long.MAX_VALUE) {
+                    --this.demand;
+                }
+            }
+            if (this.completed && this.tmpacc.empty()) {
+                this.tmpacc.close();
+                this.downstream.onComplete();
+                this.downstream = null;
+                this.exec.shutdown();
+                this.completion.itemCompleted();
+            }
+        }
     }
 }

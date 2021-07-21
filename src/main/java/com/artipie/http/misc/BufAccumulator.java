@@ -4,9 +4,9 @@
  */
 package com.artipie.http.misc;
 
-import java.io.Closeable;
 import java.nio.ByteBuffer;
-import java.util.function.Consumer;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import javax.annotation.concurrent.NotThreadSafe;
 
 /**
@@ -16,7 +16,8 @@ import javax.annotation.concurrent.NotThreadSafe;
  * @since 1.0
  */
 @NotThreadSafe
-public final class BufAccumulator implements Closeable {
+@SuppressWarnings("PMD.TooManyMethods")
+public final class BufAccumulator implements ReadableByteChannel, WritableByteChannel {
 
     /**
      * Buffer.
@@ -33,29 +34,11 @@ public final class BufAccumulator implements Closeable {
     }
 
     /**
-     * Push next chunk of data to accumulator.
-     *
-     * @param chunk Next buffer
-     * @return Self
+     * Is empty.
+     * @return True if empty
      */
-    public BufAccumulator push(final ByteBuffer chunk) {
-        this.check();
-        if (this.buffer.capacity() - this.buffer.limit() >= chunk.remaining()) {
-            this.buffer.limit(this.buffer.limit() + chunk.remaining());
-            this.buffer.put(chunk);
-        } else {
-            final int cap = Math.max(this.buffer.capacity(), chunk.capacity()) * 2;
-            final ByteBuffer resized = ByteBuffer.allocate(cap);
-            final int pos = this.buffer.position();
-            final int lim = this.buffer.limit();
-            this.buffer.flip();
-            resized.put(this.buffer);
-            resized.limit(lim + chunk.remaining());
-            resized.position(pos);
-            resized.put(chunk);
-            this.buffer = resized;
-        }
-        return this;
+    public boolean empty() {
+        return this.buffer.position() == 0;
     }
 
     /**
@@ -104,17 +87,52 @@ public final class BufAccumulator implements Closeable {
         return this.buffer.duplicate();
     }
 
-    /**
-     * Read accumulator buffer. This operation reset buffer to empty.
-     * @param reader Buffer acceptor
-     */
-    public void read(final Consumer<? super ByteBuffer> reader) {
+    @Override
+    public int read(final ByteBuffer dst) {
         this.check();
-        final ByteBuffer copy = this.buffer.duplicate();
-        copy.rewind();
-        reader.accept(copy);
-        this.buffer.clear();
-        this.buffer.limit(0);
+        int res = -1;
+        if (this.buffer.position() > 0) {
+            final ByteBuffer src = this.buffer.duplicate();
+            src.rewind();
+            final int rem = Math.min(src.remaining(), dst.remaining());
+            src.limit(rem);
+            dst.put(src);
+            this.buffer.position(rem);
+            this.buffer.compact();
+            this.buffer.limit(this.buffer.position());
+            res = rem;
+        }
+        return res;
+    }
+
+    @Override
+    public int write(final ByteBuffer src) {
+        this.check();
+        final int size = src.remaining();
+        if (this.buffer.capacity() - this.buffer.limit() >= size) {
+            this.buffer.limit(this.buffer.limit() + src.remaining());
+            this.buffer.put(src);
+        } else {
+            final int cap = Math.max(this.buffer.capacity(), src.capacity()) * 2;
+            final ByteBuffer resized = ByteBuffer.allocate(cap);
+            final int pos = this.buffer.position();
+            final int lim = this.buffer.limit();
+            this.buffer.flip();
+            resized.put(this.buffer);
+            resized.limit(lim + size);
+            resized.position(pos);
+            resized.put(src);
+            this.buffer = resized;
+        }
+        return size;
+    }
+
+    /**
+     * Accumulator size.
+     * @return Size
+     */
+    public int size() {
+        return this.buffer.position();
     }
 
     /**
@@ -137,6 +155,11 @@ public final class BufAccumulator implements Closeable {
         // @checkstyle MethodBodyCommentsCheck (1 lines)
         // assign to null means broken state, it's verified by `check` method.
         this.buffer = null;
+    }
+
+    @Override
+    public boolean isOpen() {
+        return this.buffer != null;
     }
 
     /**

@@ -5,7 +5,7 @@
 package com.artipie.http.rq.multipart;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.ext.ContentAs;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.http.headers.ContentType;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -13,8 +13,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test case for multipart request parser.
@@ -23,21 +23,21 @@ import org.junit.jupiter.api.Test;
 final class RqMultipartTest {
 
     @Test
-    @Disabled
+    @Timeout(1)
     @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-    void processesSimpleMultipartRequest() throws Exception {
+    void processesFullMultipartRequest() throws Exception {
         final String first = String.join(
             "\n",
-            "This is implicitly typed plain ASCII text.",
+            "1) This is implicitly typed plain ASCII text.",
             "It does NOT end with a linebreak."
         );
         final String second = String.join(
             "\n",
-            "This is explicitly typed plain ASCII text.",
-            "It DOES end with a linebreak."
+            "2) This is explicitly typed plain ASCII text.",
+            "It DOES end with a linebreak.", ""
         );
         final String simple = String.join(
-            "\n\r",
+            "\r\n",
             String.join(
                 "\n",
                 "This is the preamble.  It is to be ignored, though it",
@@ -60,7 +60,9 @@ final class RqMultipartTest {
                 new Content.From(simple.getBytes(StandardCharsets.US_ASCII))
             ).parts()
         ).<String>flatMapSingle(
-            part -> Single.just(part).to(ContentAs.STRING)
+            part -> Single.fromFuture(
+                new PublisherAs(part).string(StandardCharsets.US_ASCII).toCompletableFuture()
+            )
         ).toList().blockingGet();
         MatcherAssert.assertThat(
             parsed,
